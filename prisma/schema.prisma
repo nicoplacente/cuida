@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CareRole {
+  ADMIN
+  CAREGIVER
+  OBSERVER
+}
+
+enum LogType {
+  MEAL
+  MOOD
+  SLEEP
+  SYMPTOM
+  BEHAVIOR
+  INCIDENT
+  NOTE
+}
+
+enum ActivityType {
+  MEDICATION_CREATED
+  MEDICATION_DELETED
+  MEDICATION_ADMINISTERED
+  TASK_CREATED
+  TASK_COMPLETED
+  EVENT_CREATED
+  NOTE_CREATED
+  DOCUMENT_UPLOADED
+  CARE_CIRCLE_CREATED
+  MEMBER_INVITED
+  INVITATION_ACCEPTED
+}
+
+model User {
+  id              String                     @id @default(cuid())
+  name            String
+  email           String                     @unique
+  avatar          String?
+  passwordHash    String
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  sessions        Session[]
+  memberships     CareCircleMember[]
+  medications     MedicationAdministration[]
+  assignedTasks   CareTask[]                 @relation("AssignedTasks")
+  completedTasks  CareTask[]                 @relation("CompletedTasks")
+  logs            DailyLog[]
+  activities      Activity[]
+  documents       Document[]
+  invitationsSent CareInvitation[]           @relation("SentInvitations")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CareCircle {
+  id            String             @id @default(cuid())
+  name          String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  patient       Patient?
+  members       CareCircleMember[]
+  medications   Medication[]
+  tasks         CareTask[]
+  events        CalendarEvent[]
+  logs          DailyLog[]
+  documents     Document[]
+  activities    Activity[]
+  notifications Notification[]
+  invitations   CareInvitation[]
+}
+
+model CareInvitation {
+  id           String     @id @default(cuid())
+  careCircleId String
+  invitedById  String
+  email        String
+  name         String?
+  role         CareRole   @default(CAREGIVER)
+  token        String     @unique
+  acceptedAt   DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime   @default(now())
+  careCircle   CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  invitedBy    User       @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([careCircleId, email])
+  @@index([token])
+}
+
+model CareCircleMember {
+  id           String     @id @default(cuid())
+  userId       String
+  careCircleId String
+  role         CareRole   @default(CAREGIVER)
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  careCircle   CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, careCircleId])
+}
+
+model Patient {
+  id               String     @id @default(cuid())
+  careCircleId     String     @unique
+  name             String
+  age              Int
+  photo            String?
+  medicalCondition String?
+  importantNotes   String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  careCircle       CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+}
+
+model Medication {
+  id              String                     @id @default(cuid())
+  careCircleId    String
+  name            String
+  dose            String
+  schedule        String
+  frequency       String
+  instructions    String?
+  active          Boolean                    @default(true)
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  careCircle      CareCircle                 @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  administrations MedicationAdministration[]
+}
+
+model MedicationAdministration {
+  id             String     @id @default(cuid())
+  medicationId   String
+  userId         String
+  scheduledFor   DateTime
+  administeredAt DateTime   @default(now())
+  medication     Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([medicationId, scheduledFor])
+}
+
+model CareTask {
+  id            String     @id @default(cuid())
+  careCircleId  String
+  title         String
+  description   String?
+  scheduledTime String?
+  completed     Boolean    @default(false)
+  assignedToId  String?
+  completedById String?
+  completedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  careCircle    CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  assignedTo    User?      @relation("AssignedTasks", fields: [assignedToId], references: [id], onDelete: SetNull)
+  completedBy   User?      @relation("CompletedTasks", fields: [completedById], references: [id], onDelete: SetNull)
+}
+
+model CalendarEvent {
+  id           String     @id @default(cuid())
+  careCircleId String
+  title        String
+  date         DateTime
+  time         String
+  location     String?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  careCircle   CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+}
+
+model DailyLog {
+  id           String     @id @default(cuid())
+  careCircleId String
+  userId       String
+  type         LogType    @default(NOTE)
+  content      String
+  occurredAt   DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  careCircle   CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id           String     @id @default(cuid())
+  careCircleId String
+  uploadedById String
+  title        String
+  fileName     String
+  filePath     String
+  mimeType     String?
+  size         Int?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  careCircle   CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  uploadedBy   User       @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id           String       @id @default(cuid())
+  careCircleId String
+  userId       String?
+  type         ActivityType
+  message      String
+  createdAt    DateTime     @default(now())
+  careCircle   CareCircle   @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id           String     @id @default(cuid())
+  careCircleId String
+  title        String
+  message      String
+  scheduledFor DateTime
+  read         Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  careCircle   CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+}
