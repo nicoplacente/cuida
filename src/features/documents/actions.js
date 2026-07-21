@@ -1,12 +1,13 @@
 "use server";
 
-import { mkdir, unlink, writeFile } from "fs/promises";
+import { randomUUID } from "crypto";
 import path from "path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/services/db";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
+import { deleteR2Object, uploadR2Object } from "@/services/r2";
 
 const maxFileSize = 8 * 1024 * 1024;
 const allowedMimeTypes = new Set([
@@ -65,13 +66,20 @@ export async function uploadDocumentAction(formData) {
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
-  const fileName = `${Date.now()}-${sanitizeFileName(file.name)}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
-  const filePath = path.join(uploadDir, fileName);
-  const publicPath = `/uploads/documents/${fileName}`;
+  const fileName = sanitizeFileName(file.name);
+  const objectKey = `documents/${careCircle.id}/${Date.now()}-${randomUUID()}-${fileName}`;
 
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(filePath, buffer);
+  try {
+    await uploadR2Object({
+      body: buffer,
+      contentType: file.type,
+      key: objectKey,
+    });
+  } catch (error) {
+    documentsRedirect({
+      error: "No se pudo subir el archivo. Intentá nuevamente.",
+    });
+  }
 
   try {
     await prisma.document.create({
@@ -80,7 +88,7 @@ export async function uploadDocumentAction(formData) {
         uploadedById: user.id,
         title,
         fileName: file.name,
-        filePath: publicPath,
+        filePath: objectKey,
         mimeType: file.type || null,
         size: file.size || null,
         notes: notes || null,
@@ -94,7 +102,7 @@ export async function uploadDocumentAction(formData) {
       message: `${user.name} subió el documento ${title}.`,
     });
   } catch (error) {
-    await unlink(filePath).catch(() => null);
+    await deleteR2Object(objectKey).catch(() => null);
     documentsRedirect({
       error: "No se pudo guardar el documento. Intentá nuevamente.",
     });

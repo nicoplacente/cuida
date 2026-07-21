@@ -37,6 +37,12 @@ enum ActivityType {
   INVITATION_ACCEPTED
 }
 
+enum NotificationType {
+  MEDICATION
+  TASK
+  EVENT
+}
+
 model User {
   id              String                     @id @default(cuid())
   name            String
@@ -54,6 +60,8 @@ model User {
   activities      Activity[]
   documents       Document[]
   invitationsSent CareInvitation[]           @relation("SentInvitations")
+  notifications   Notification[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Session {
@@ -158,6 +166,7 @@ model CareTask {
   title         String
   description   String?
   scheduledTime String?
+  scheduledDate DateTime?
   completed     Boolean    @default(false)
   assignedToId  String?
   completedById String?
@@ -221,12 +230,37 @@ model Activity {
 }
 
 model Notification {
-  id           String     @id @default(cuid())
-  careCircleId String
-  title        String
-  message      String
-  scheduledFor DateTime
-  read         Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  careCircle   CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  id            String           @id @default(cuid())
+  careCircleId  String
+  userId        String
+  type          NotificationType
+  sourceId      String
+  occurrenceKey String
+  title         String
+  message       String
+  url           String
+  scheduledFor  DateTime
+  claimedAt     DateTime?
+  sentAt        DateTime?
+  readAt        DateTime?
+  createdAt     DateTime         @default(now())
+  careCircle    CareCircle       @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, occurrenceKey])
+  @@index([scheduledFor, sentAt])
+  @@index([userId, readAt, createdAt])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

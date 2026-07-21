@@ -21,8 +21,8 @@ const problemPoints = [
 export default function Home() {
   return (
     <main className="min-h-screen bg-[color:var(--care-canvas)]">
-      <header className="border-b border-[color:var(--care-cloud)] bg-white/85 backdrop-blur">
-        <Shell className="flex min-h-20 items-center justify-between gap-4">
+      <header className="relative z-40 border-b border-[color:var(--care-cloud)] bg-white/85 backdrop-blur">
+        <Shell className="relative flex min-h-20 items-center justify-between gap-4">
           <a href="/" className="flex items-center gap-3 font-semibold">
             <Image
               src="/cuida.png"
@@ -34,7 +34,7 @@ export default function Home() {
             />
             <span className="text-xl tracking-[-0.02em]">Cuida</span>
           </a>
-          <nav className="hidden items-center gap-6 text-sm font-semibold text-[color:var(--care-ink-soft)] sm:flex">
+          <nav className="hidden items-center gap-6 text-sm font-semibold text-[color:var(--care-ink-soft)] md:flex">
             <a href="#solucion" className="hover:text-[color:var(--care-ink)]">
               Solución
             </a>
@@ -44,7 +44,29 @@ export default function Home() {
             <a href="/login" className="hover:text-[color:var(--care-ink)]">
               Ingresar
             </a>
+            <LinkButton href="/registro" className="min-h-10 px-5 py-2 text-sm">
+              Comenzar gratis
+            </LinkButton>
           </nav>
+          <details className="group md:hidden">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center rounded-full border border-[color:var(--care-cloud)] bg-white px-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+              Menú
+            </summary>
+            <nav className="absolute inset-x-4 top-[calc(100%-4px)] z-30 grid gap-1 rounded-2xl border border-[color:var(--care-cloud)] bg-white p-4 shadow-[0_22px_70px_rgba(11,31,58,0.16)] sm:inset-x-6">
+              <a href="#solucion" className="rounded-xl px-3 py-3 font-semibold hover:bg-[color:var(--care-canvas)]">
+                Solución
+              </a>
+              <a href="#caracteristicas" className="rounded-xl px-3 py-3 font-semibold hover:bg-[color:var(--care-canvas)]">
+                Características
+              </a>
+              <a href="/login" className="rounded-xl px-3 py-3 font-semibold hover:bg-[color:var(--care-canvas)]">
+                Ingresar
+              </a>
+              <LinkButton href="/registro" className="mt-2 w-full">
+                Comenzar gratis
+              </LinkButton>
+            </nav>
+          </details>
         </Shell>
       </header>
 

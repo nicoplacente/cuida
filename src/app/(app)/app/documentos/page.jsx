@@ -24,8 +24,8 @@ export default async function DocumentsPage({ searchParams }) {
   return (
     <div>
       <PageHeader eyebrow="Documentos" title="Recetas, estudios y archivos importantes a mano.">
-        Guarda documentos médicos en storage local del proyecto para que el
-        equipo no dependa de chats o fotos sueltas.
+        Guarda documentos médicos protegidos para que solo el grupo familiar
+        pueda acceder a ellos.
       </PageHeader>
 
       {params?.error ? (
@@ -64,7 +64,7 @@ export default async function DocumentsPage({ searchParams }) {
                       ) : null}
                     </div>
                     <a
-                      href={document.filePath}
+                      href={`/app/documentos/${document.id}/archivo`}
                       target="_blank"
                       rel="noreferrer"
                       className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[color:var(--care-ink)]"

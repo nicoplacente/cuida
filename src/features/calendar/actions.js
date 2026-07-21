@@ -25,7 +25,7 @@ export async function createEventAction(formData) {
     data: {
       careCircleId: careCircle.id,
       title,
-      date: new Date(`${date}T00:00:00`),
+      date: new Date(`${date}T12:00:00Z`),
       time,
       location: location || null,
       notes: notes || null,

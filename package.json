@@ -2,12 +2,14 @@
   "name": "cuida",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
     "preinstall": "node scripts/ensure-pnpm.js",
     "dev": "node scripts/ensure-pnpm.js && next dev",
     "build": "node scripts/ensure-pnpm.js && next build",
     "start": "node scripts/ensure-pnpm.js && next start",
+    "worker:notifications": "node scripts/notifications-worker.js",
     "db:generate": "node scripts/ensure-pnpm.js && prisma generate",
     "db:migrate": "node scripts/ensure-pnpm.js && prisma migrate dev",
     "db:push": "node scripts/ensure-pnpm.js && prisma db push",
@@ -20,7 +22,8 @@
     "@prisma/client": "^6.19.3",
     "next": "16.2.10",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

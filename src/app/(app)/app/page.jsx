@@ -23,9 +23,10 @@ export default async function DashboardPage() {
   return (
     <div>
       <PageHeader eyebrow="Dashboard" title={`Buenos días, ${user.name}.`}>
-        Hoy {patient.name} tiene {data.pendingMedications} medicamentos
-        pendientes, {data.events.length} turno médico y {data.pendingTasks}
-        tareas por completar.
+        Hoy {patient.name} tiene {data.pendingMedications}{" "}
+        {data.pendingMedications === 1 ? "medicamento pendiente" : "medicamentos pendientes"},{" "}
+        {data.events.length} {data.events.length === 1 ? "turno médico" : "turnos médicos"} y{" "}
+        {data.pendingTasks} {data.pendingTasks === 1 ? "tarea por completar" : "tareas por completar"}.
       </PageHeader>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
@@ -114,22 +115,6 @@ export default async function DashboardPage() {
               })}
             </div>
           </Card>
-        </div>
-
-        <aside className="grid gap-6">
-          <Card className="p-6">
-            <h2 className="mb-4 text-xl font-semibold">Actividad reciente</h2>
-            <div className="grid gap-4">
-              {data.activities.map((activity) => (
-                <div key={activity.id} className="border-l-2 border-[color:var(--care-teal)] pl-4">
-                  <p className="font-semibold">{activity.message}</p>
-                  <p className="text-sm text-[color:var(--care-muted)]">
-                    {formatTime(activity.createdAt)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Card>
 
           <Card className="p-6">
             <h2 className="mb-4 text-xl font-semibold">Últimas notas</h2>
@@ -146,6 +131,26 @@ export default async function DashboardPage() {
               ) : (
                 <EmptyState title="Sin notas todavía." />
               )}
+            </div>
+          </Card>
+        </div>
+
+        <aside className="min-h-0">
+          <Card className="flex h-full min-h-0 flex-col p-6">
+            <h2 className="mb-4 text-xl font-semibold">Actividad reciente</h2>
+            <div
+              aria-label="Listado de actividad reciente"
+              className="grid max-h-[450px] gap-4 overflow-y-auto pr-2 xl:max-h-none xl:min-h-0 xl:flex-1"
+              tabIndex={0}
+            >
+              {data.activities.map((activity) => (
+                <div key={activity.id} className="border-l-2 border-[color:var(--care-teal)] pl-4">
+                  <p className="font-semibold">{activity.message}</p>
+                  <p className="text-sm text-[color:var(--care-muted)]">
+                    {formatTime(activity.createdAt)}
+                  </p>
+                </div>
+              ))}
             </div>
           </Card>
         </aside>

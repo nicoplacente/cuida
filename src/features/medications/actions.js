@@ -5,6 +5,10 @@ import { prisma } from "@/services/db";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
 import { getScheduledDate } from "@/utils/dates";
+import {
+  cancelPendingNotifications,
+  getNotificationDateKey,
+} from "@/services/notifications";
 
 function getField(formData, name) {
   return String(formData.get(name) || "").trim();
@@ -78,6 +82,12 @@ export async function administerMedicationAction(formData) {
     .catch(() => null);
 
   if (administration) {
+    await cancelPendingNotifications(
+      "MEDICATION",
+      medicationId,
+      `MEDICATION:${medicationId}:${getNotificationDateKey(scheduledFor)}`,
+    );
+
     await createActivity({
       careCircleId: careCircle.id,
       userId: user.id,
@@ -107,6 +117,10 @@ export async function toggleMedicationAction(formData) {
     data: { active },
   });
 
+  if (!active) {
+    await cancelPendingNotifications("MEDICATION", medicationId);
+  }
+
   revalidatePath("/app/medicamentos");
 }
 
@@ -131,6 +145,8 @@ export async function deleteMedicationAction(formData) {
   if (!medication) {
     return;
   }
+
+  await cancelPendingNotifications("MEDICATION", medicationId);
 
   await prisma.medication.delete({
     where: {

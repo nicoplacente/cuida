@@ -3,6 +3,7 @@ import { requireCareContext, getCareCircleMembers } from "@/services/care-circle
 import { prisma } from "@/services/db";
 import { Badge, Card, EmptyState, Field, PrimaryButton, inputClassName } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
+import { formatShortDate } from "@/utils/dates";
 
 export default async function TasksPage() {
   const { careCircle } = await requireCareContext();
@@ -43,7 +44,8 @@ export default async function TasksPage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-semibold text-[color:var(--care-muted)]">
-                        {task.scheduledTime || "Sin horario"}
+                        {task.scheduledDate ? formatShortDate(task.scheduledDate) : "Sin fecha"}
+                        {task.scheduledTime ? ` · ${task.scheduledTime}` : " · Sin horario"}
                       </p>
                       <h3 className="mt-1 text-xl font-semibold">{task.title}</h3>
                       {task.description ? (
@@ -84,6 +86,9 @@ export default async function TasksPage() {
             </Field>
             <Field label="Descripción">
               <textarea className={inputClassName} name="description" rows={4} />
+            </Field>
+            <Field label="Fecha">
+              <input className={inputClassName} type="date" name="scheduledDate" />
             </Field>
             <Field label="Horario">
               <input className={inputClassName} type="time" name="scheduledTime" />

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/services/db";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
+import { cancelPendingNotifications } from "@/services/notifications";
 
 function getField(formData, name) {
   return String(formData.get(name) || "").trim();
@@ -14,6 +15,7 @@ export async function createTaskAction(formData) {
   const title = getField(formData, "title");
   const description = getField(formData, "description");
   const scheduledTime = getField(formData, "scheduledTime");
+  const scheduledDate = getField(formData, "scheduledDate");
   const assignedToId = getField(formData, "assignedToId");
 
   if (!careCircle || !title) {
@@ -26,6 +28,7 @@ export async function createTaskAction(formData) {
       title,
       description: description || null,
       scheduledTime: scheduledTime || null,
+      scheduledDate: scheduledDate ? new Date(`${scheduledDate}T12:00:00Z`) : null,
       assignedToId: assignedToId || null,
     },
   });
@@ -63,6 +66,8 @@ export async function completeTaskAction(formData) {
   });
 
   if (task.count > 0) {
+    await cancelPendingNotifications("TASK", taskId);
+
     await createActivity({
       careCircleId: careCircle.id,
       userId: user.id,

@@ -10,25 +10,25 @@ function hashPassword(password) {
 }
 
 async function main() {
-  await prisma.user.deleteMany({
-    where: {
-      email: {
-        in: ["ana@cuida.local", "laura@cuida.local"],
-      },
-    },
-  });
-  
+  // await prisma.user.deleteMany({
+  //   where: {
+  //     email: {
+  //       in: ["ana@cuida.local", "laura@cuida.local"],
+  //     },
+  //   },
+  // });
+
   const nicolas = await prisma.user.upsert({
-    where: { email: "nicolasplacente@gmail.com" },
+    where: { email: "test@gmail.com" },
     update: {
       name: "Nicolás Placente",
-      passwordHash: hashPassword("Between12"),
+      passwordHash: hashPassword("test"),
     },
     create: {
       name: "Nicolás Placente",
-      email: "nicolasplacente@gmail.com",
+      email: "test@gmail.com",
       avatar: "/cuida.png",
-      passwordHash: hashPassword("Between12"),
+      passwordHash: hashPassword("test"),
     },
   });
 
