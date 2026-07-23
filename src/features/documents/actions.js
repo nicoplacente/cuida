@@ -76,6 +76,7 @@ export async function uploadDocumentAction(formData) {
       key: objectKey,
     });
   } catch (error) {
+    console.error("[R2 Upload Error]", error);
     documentsRedirect({
       error: "No se pudo subir el archivo. Intentá nuevamente.",
     });
@@ -102,6 +103,7 @@ export async function uploadDocumentAction(formData) {
       message: `${user.name} subió el documento ${title}.`,
     });
   } catch (error) {
+    console.error("[Document Save Error]", error);
     await deleteR2Object(objectKey).catch(() => null);
     documentsRedirect({
       error: "No se pudo guardar el documento. Intentá nuevamente.",

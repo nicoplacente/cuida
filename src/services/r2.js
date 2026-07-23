@@ -73,6 +73,10 @@ function buildSignedRequest({ body, contentType, key, method }) {
     "x-amz-date": amzDate,
   };
 
+  if (body) {
+    headers["content-length"] = String(body.length ?? body.byteLength ?? 0);
+  }
+
   if (contentType) {
     headers["content-type"] = contentType;
   }
