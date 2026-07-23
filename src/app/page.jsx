@@ -106,28 +106,7 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              <div className="mt-4 grid gap-3">
-                {[
-                  ["08:00", "Donepezilo 10 mg", "Pendiente"],
-                  ["16:00", "Consulta neurológica", "Turno"],
-                  ["20:00", "Preparar cena", "Tarea"],
-                ].map(([time, title, status]) => (
-                  <div
-                    key={title}
-                    className="flex items-center justify-between gap-4 rounded-2xl bg-white p-4"
-                  >
-                    <div>
-                      <p className="font-semibold">{title}</p>
-                      <p className="text-sm text-[color:var(--care-muted)]">
-                        {time}
-                      </p>
-                    </div>
-                    <Badge tone={status === "Pendiente" ? "warning" : "neutral"}>
-                      {status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+            
             </div>
           </Card>
         </Shell>
