@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --care-ink: #0b1f3a;
-  --care-ink-soft: #24415f;
-  --care-teal: #00b8b8;
+  --care-ink: #b42318;
+  --care-ink-soft: #b42318;
+  --care-teal: #b42318;
   --care-teal-soft: #b42318;
   --care-paper: #b42318;
   --care-canvas: #b42318;
   --care-cloud: #b42318;
-  --care-muted: #64748b;
-  --care-success: #087f5b;
-  --care-warning: #a15c07;
+  --care-muted: #b42318;
+  --care-success: #b42318;
+  --care-warning: #b42318;
   --care-danger: #b42318;
 }
 
