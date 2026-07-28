@@ -2,63 +2,64 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/services/db";
+import { sendPasswordResetEmail } from "@/services/email";
 import { createSession, destroySession } from "@/services/auth";
-import { hashPassword, verifyPassword } from "@/utils/passwords";
 import { createActivity } from "@/services/activity";
+import { getAppUrl } from "@/utils/app-url";
+import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
+import { getFormField, isValidEmail } from "@/utils/form-data";
+import {
+  hashPassword,
+  isValidNewPassword,
+  maximumPasswordLength,
+  verifyPassword,
+} from "@/utils/passwords";
+import {
+  createPasswordResetToken,
+  hashPasswordResetToken,
+  isValidPasswordResetToken,
+} from "@/utils/password-reset";
 
-const databaseErrorMessage =
-  "No se pudo conectar con la base de datos. Revisá DATABASE_URL y las credenciales de PostgreSQL.";
+const resetRequestMessage =
+  "Si el email pertenece a una cuenta, vas a recibir un enlace para restablecer la contraseña.";
+const resetTokenLifetime = 30 * 60 * 1000;
+const resetRequestCooldown = 60 * 1000;
+const minimumResetResponseTime = 800;
 
-function getField(formData, name) {
-  return String(formData.get(name) || "").trim();
+async function normalizeResetResponseTime(startedAt) {
+  const remainingTime = minimumResetResponseTime - (Date.now() - startedAt);
+  if (remainingTime > 0) {
+    await new Promise((resolve) => setTimeout(resolve, remainingTime));
+  }
 }
 
-function isDatabaseConnectionError(error) {
-  return (
-    error?.name === "PrismaClientInitializationError" ||
-    error?.code === "P1000" ||
-    error?.code === "P1001" ||
-    error?.code === "P1003"
-  );
-}
+export async function registerAction(_previousState, formData) {
+  const name = getFormField(formData, "name");
+  const email = getFormField(formData, "email").toLowerCase();
+  const password = getFormField(formData, "password");
+  const patientName = getFormField(formData, "patientName");
+  const patientAge = Number(getFormField(formData, "patientAge"));
+  const medicalCondition = getFormField(formData, "medicalCondition");
 
-export async function registerAction(formData) {
-  const name = getField(formData, "name");
-  const email = getField(formData, "email").toLowerCase();
-  const password = getField(formData, "password");
-  const patientName = getField(formData, "patientName");
-  const patientAge = Number(getField(formData, "patientAge"));
-  const medicalCondition = getField(formData, "medicalCondition");
-
-  if (!name || !email || password.length < 8 || !patientName || !patientAge) {
-    redirect(
-      "/registro?error=Completá todos los campos obligatorios. La contraseña debe tener al menos 8 caracteres.",
+  if (!name || !isValidEmail(email) || !isValidNewPassword(password) || !patientName || patientAge < 1) {
+    return actionError(
+      "Completá los campos obligatorios. La contraseña debe tener al menos 8 caracteres.",
     );
   }
 
-  let existingUser;
-
   try {
-    existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email },
       select: { id: true },
     });
-  } catch (error) {
-    if (isDatabaseConnectionError(error)) {
-      redirect(`/registro?error=${encodeURIComponent(databaseErrorMessage)}`);
+
+    if (existingUser) {
+      return actionError(
+        "No pudimos crear la cuenta con esos datos. Si ya tenés una cuenta, iniciá sesión.",
+      );
     }
 
-    throw error;
-  }
-
-  if (existingUser) {
-    redirect("/registro?error=Ya existe una cuenta con ese email.");
-  }
-
-  let user;
-
-  try {
-    user = await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,
@@ -85,52 +86,176 @@ export async function registerAction(formData) {
         memberships: true,
       },
     });
-  } catch (error) {
-    if (isDatabaseConnectionError(error)) {
-      redirect(`/registro?error=${encodeURIComponent(databaseErrorMessage)}`);
-    }
 
-    throw error;
+    await createActivity({
+      careCircleId: user.memberships[0].careCircleId,
+      userId: user.id,
+      type: "CARE_CIRCLE_CREATED",
+      message: `${user.name} creó el círculo de cuidado.`,
+    });
+
+    await createSession(user.id);
+  } catch (error) {
+    return unexpectedActionError("registerAction", error);
   }
 
-  await createActivity({
-    careCircleId: user.memberships[0].careCircleId,
-    userId: user.id,
-    type: "CARE_CIRCLE_CREATED",
-    message: `${user.name} creó el círculo de cuidado.`,
-  });
-
-  await createSession(user.id);
   redirect("/app");
 }
 
-export async function loginAction(formData) {
-  const email = getField(formData, "email").toLowerCase();
-  const password = getField(formData, "password");
+export async function loginAction(_previousState, formData) {
+  const email = getFormField(formData, "email").toLowerCase();
+  const password = getFormField(formData, "password");
 
-  let user;
+  if (!isValidEmail(email) || !password || password.length > maximumPasswordLength) {
+    return actionError("Ingresá un email y una contraseña válidos.");
+  }
 
   try {
-    user = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email },
     });
-  } catch (error) {
-    if (isDatabaseConnectionError(error)) {
-      redirect(`/login?error=${encodeURIComponent(databaseErrorMessage)}`);
+
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      return actionError("Email o contraseña incorrectos.");
     }
 
-    throw error;
+    await createSession(user.id);
+  } catch (error) {
+    return unexpectedActionError("loginAction", error);
   }
 
-  if (!user || !verifyPassword(password, user.passwordHash)) {
-    redirect("/login?error=Email o contraseña incorrectos.");
-  }
-
-  await createSession(user.id);
   redirect("/app");
+}
+
+export async function requestPasswordResetAction(_previousState, formData) {
+  const email = getFormField(formData, "email").toLowerCase();
+
+  if (!isValidEmail(email)) {
+    return actionError("Ingresá un email válido.");
+  }
+
+  const startedAt = Date.now();
+  let result = actionSuccess(resetRequestMessage);
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, name: true },
+    });
+
+    if (user) {
+      const recentRequest = await prisma.passwordResetToken.findFirst({
+        where: {
+          userId: user.id,
+          createdAt: { gt: new Date(Date.now() - resetRequestCooldown) },
+        },
+        select: { id: true },
+      });
+
+      if (!recentRequest) {
+        const token = createPasswordResetToken();
+        const tokenHash = hashPasswordResetToken(token);
+        const expiresAt = new Date(Date.now() + resetTokenLifetime);
+
+        await prisma.$transaction([
+          prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+          prisma.passwordResetToken.create({
+            data: { tokenHash, userId: user.id, expiresAt },
+          }),
+        ]);
+
+        try {
+          await sendPasswordResetEmail({
+            email: user.email,
+            name: user.name,
+            resetUrl: `${getAppUrl()}/restablecer-contrasena/${token}`,
+          });
+        } catch (error) {
+          await prisma.passwordResetToken
+            .deleteMany({ where: { tokenHash } })
+            .catch(() => null);
+          console.error("[requestPasswordResetAction:send]", error);
+        }
+      }
+    }
+  } catch (error) {
+    result = unexpectedActionError("requestPasswordResetAction", error);
+  }
+
+  await normalizeResetResponseTime(startedAt);
+  return result;
+}
+
+export async function resetPasswordAction(_previousState, formData) {
+  const token = getFormField(formData, "token");
+  const password = getFormField(formData, "password");
+  const passwordConfirmation = getFormField(formData, "passwordConfirmation");
+
+  if (!isValidPasswordResetToken(token)) {
+    return actionError("El enlace no es válido o ya venció. Solicitá uno nuevo.");
+  }
+
+  if (!isValidNewPassword(password)) {
+    return actionError("La contraseña debe tener entre 8 y 128 caracteres.");
+  }
+
+  if (password !== passwordConfirmation) {
+    return actionError("Las contraseñas no coinciden.");
+  }
+
+  const tokenHash = hashPasswordResetToken(token);
+
+  try {
+    const passwordWasUpdated = await prisma.$transaction(async (transaction) => {
+      const resetToken = await transaction.passwordResetToken.findUnique({
+        where: { tokenHash },
+        select: { id: true, userId: true, expiresAt: true },
+      });
+
+      if (!resetToken || resetToken.expiresAt <= new Date()) {
+        return false;
+      }
+
+      const consumedToken = await transaction.passwordResetToken.deleteMany({
+        where: {
+          id: resetToken.id,
+          expiresAt: { gt: new Date() },
+        },
+      });
+
+      if (consumedToken.count !== 1) {
+        return false;
+      }
+
+      await transaction.user.update({
+        where: { id: resetToken.userId },
+        data: { passwordHash: hashPassword(password) },
+      });
+
+      await Promise.all([
+        transaction.session.deleteMany({ where: { userId: resetToken.userId } }),
+        transaction.passwordResetToken.deleteMany({ where: { userId: resetToken.userId } }),
+      ]);
+
+      return true;
+    });
+
+    if (!passwordWasUpdated) {
+      return actionError("El enlace no es válido o ya venció. Solicitá uno nuevo.");
+    }
+
+    return actionSuccess("Contraseña actualizada. Ya podés iniciar sesión.");
+  } catch (error) {
+    return unexpectedActionError("resetPasswordAction", error);
+  }
 }
 
 export async function logoutAction() {
-  await destroySession();
+  try {
+    await destroySession();
+  } catch (error) {
+    return unexpectedActionError("logoutAction", error);
+  }
+
   redirect("/");
 }

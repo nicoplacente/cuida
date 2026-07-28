@@ -5,12 +5,30 @@ import { createHash, createHmac } from "crypto";
 const r2Region = "auto";
 const r2Service = "s3";
 const emptyBodyHash = createHash("sha256").update("").digest("hex");
+const requestTimeout = 20_000;
+
+class R2ConfigurationError extends Error {
+  constructor(variableName) {
+    super(`Falta configurar ${variableName}.`);
+    this.name = "R2ConfigurationError";
+  }
+}
+
+class R2RequestError extends Error {
+  constructor(message, { cause, code, requestId, status } = {}) {
+    super(message, cause ? { cause } : undefined);
+    this.name = "R2RequestError";
+    this.code = code || null;
+    this.requestId = requestId || null;
+    this.status = status || null;
+  }
+}
 
 function getRequiredEnv(name) {
   const value = process.env[name];
 
   if (!value) {
-    throw new Error(`Falta configurar ${name}.`);
+    throw new R2ConfigurationError(name);
   }
 
   return value;
@@ -117,14 +135,51 @@ function buildSignedRequest({ body, contentType, key, method }) {
 
 async function requestR2Object({ body, contentType, key, method }) {
   const { headers, url } = buildSignedRequest({ body, contentType, key, method });
-  const response = await fetch(url, {
-    body,
-    headers,
-    method,
-  });
+  let response;
+
+  try {
+    response = await fetch(url, {
+      body,
+      headers,
+      method,
+      signal: AbortSignal.timeout(requestTimeout),
+    });
+  } catch (error) {
+    const code =
+      error.name === "TimeoutError" || error.name === "AbortError"
+        ? "RequestTimeout"
+        : error.cause?.code || "NetworkError";
+
+    console.error(`[R2:${method}]`, {
+      code,
+      message: error.message,
+    });
+    throw new R2RequestError("No se pudo conectar con R2.", {
+      cause: error,
+      code,
+    });
+  }
 
   if (!response.ok) {
-    throw new Error(`R2 respondió con estado ${response.status}.`);
+    const responseBody = await response.text().catch(() => "");
+    const code = responseBody.match(/<Code>([^<]+)<\/Code>/)?.[1] || null;
+    const message = responseBody.match(/<Message>([^<]+)<\/Message>/)?.[1] || null;
+    const requestId =
+      response.headers.get("cf-ray") ||
+      responseBody.match(/<RequestId>([^<]+)<\/RequestId>/)?.[1] ||
+      null;
+
+    console.error(`[R2:${method}]`, {
+      code,
+      message,
+      requestId,
+      status: response.status,
+    });
+    throw new R2RequestError(`R2 respondió con estado ${response.status}.`, {
+      code,
+      requestId,
+      status: response.status,
+    });
   }
 
   return response;
@@ -151,4 +206,32 @@ export async function deleteR2Object(key) {
     key,
     method: "DELETE",
   });
+}
+
+export function getR2UploadErrorMessage(error) {
+  if (error instanceof R2ConfigurationError) {
+    return "El almacenamiento de documentos no está configurado. Avisale al administrador.";
+  }
+
+  if (!(error instanceof R2RequestError)) {
+    return null;
+  }
+
+  if (
+    error.status === 401 ||
+    error.status === 403 ||
+    ["AccessDenied", "InvalidAccessKeyId", "SignatureDoesNotMatch"].includes(error.code)
+  ) {
+    return "El almacenamiento rechazó la subida. Avisale al administrador para revisar el acceso.";
+  }
+
+  if (error.code === "NoSuchBucket") {
+    return "El espacio de documentos no está disponible. Avisale al administrador.";
+  }
+
+  if (["NetworkError", "RequestTimeout"].includes(error.code)) {
+    return "No pudimos conectar con el almacenamiento. Intentá nuevamente.";
+  }
+
+  return "No pudimos guardar el archivo en el almacenamiento. Intentá nuevamente.";
 }

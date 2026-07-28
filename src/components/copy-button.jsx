@@ -1,24 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { CheckIcon } from "@/components/icons/check-icon";
+import { CopyIcon } from "@/components/icons/copy-icon";
 
 export function CopyButton({ value, label = "Copiar enlace" }) {
-  const [copied, setCopied] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const resetTimerRef = useRef(null);
+
+  useEffect(
+    () => () => {
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+      }
+    },
+    [],
+  );
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
+    try {
+      await navigator.clipboard.writeText(value);
+      setIsCopied(true);
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+      }
+      resetTimerRef.current = setTimeout(() => {
+        setIsCopied(false);
+        resetTimerRef.current = null;
+      }, 2_000);
+      toast.success("Enlace copiado.");
+    } catch {
+      toast.error("No pudimos copiar el enlace.");
+    }
   }
 
   return (
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex min-h-11 items-center justify-center rounded-full bg-[color:var(--care-ink)] px-5 py-2 text-sm font-semibold text-white transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-      aria-live="polite"
+      aria-label={isCopied ? "Enlace copiado" : label}
+      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-(--care-ink) px-5 py-2 text-sm font-semibold text-white transition hover:brightness-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      {copied ? "Copiado" : label}
+      {isCopied ? <CheckIcon /> : <CopyIcon />}
+      <span aria-live="polite">{isCopied ? "Copiado" : label}</span>
     </button>
   );
 }

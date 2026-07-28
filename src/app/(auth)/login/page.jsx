@@ -1,11 +1,10 @@
 import Image from "next/image";
 import { loginAction } from "@/app/(auth)/actions";
-import { Card, Field, LinkButton, PrimaryButton, inputClassName } from "@/components/ui";
+import { PasswordField } from "@/components/password-field";
+import { SubmitButton, ToastForm } from "@/components/toast-form";
+import { Card, Field, LinkButton, inputClassName } from "@/components/ui";
 
-export default async function LoginPage({ searchParams }) {
-  const params = await searchParams;
-  const error = params?.error;
-
+export default function LoginPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-[color:var(--care-canvas)] px-4 py-10">
       <Card className="w-full max-w-md p-6 sm:p-8">
@@ -28,13 +27,7 @@ export default async function LoginPage({ searchParams }) {
           </div>
         </div>
 
-        {error ? (
-          <p className="mb-5 rounded-2xl bg-[#fff4de] p-4 text-sm font-semibold text-[color:var(--care-warning)]">
-            {error}
-          </p>
-        ) : null}
-
-        <form action={loginAction} className="grid gap-4">
+        <ToastForm action={loginAction} className="grid gap-4">
           <Field label="Email">
             <input
               className={inputClassName}
@@ -44,21 +37,27 @@ export default async function LoginPage({ searchParams }) {
               required
             />
           </Field>
-          <Field label="Contraseña">
-            <input
-              className={inputClassName}
-              type="password"
+          <Field label="Contraseña" htmlFor="login-password">
+            <PasswordField
+              id="login-password"
               name="password"
               autoComplete="current-password"
+              maxLength={128}
               required
             />
           </Field>
-          <PrimaryButton type="submit" className="mt-2 w-full">
+          <SubmitButton pendingLabel="Ingresando…" className="mt-2 w-full">
             Ingresar
-          </PrimaryButton>
-        </form>
+          </SubmitButton>
+        </ToastForm>
 
         <div className="mt-6 grid gap-3 text-center">
+          <a
+            href="/olvide-contrasena"
+            className="text-sm font-semibold text-[color:var(--care-ink-soft)] underline decoration-[color:var(--care-teal)] underline-offset-4"
+          >
+            ¿Olvidaste tu contraseña?
+          </a>
           <a
             href="/registro"
             className="text-sm font-semibold text-[color:var(--care-ink)] underline decoration-[color:var(--care-teal)] underline-offset-4"

@@ -1,13 +1,13 @@
 1. Arreglar error al subir documentos (posible error de config en cloudflare R2).
 
-2. Mejorar la invitacion con modal de compartir por WhatsApp.
+2. Revisar el funcionamiento de la frecuencia en tareas, medicamentos y lapsos de tiempo especificos y como funcionan con respecto a las notificaciones.
 
-3. Revisar el funcionamiento de la frecuencia en tareas, medicamentos y lapsos de tiempo especificos y como funcionan con respecto a las notificaciones.
+3. Revisar funcionamiento de notificaciones
 
-4. Agregar validaciones y errores para que no se puedan registrar tareas o medicamentos fuera de los horarios y/o fechas establecidos.
+4. Agregar asistente de ia y evaluar posibles integraciones a ver cual es mas eficiente y conveniente para el proyecto.
 
-5. Revisar funcionamiento de notificaciones.
+5. agregar juegos de memoria simples por niveles.
 
-6. Agregar flujo y testear mail de "reseteo de contraseñas" y el correcto funcionamiento del flujo.
+6. Revisar edicion de cada item.
 
-7. Agregar asistente de ia y evaluar posibles integraciones a ver cual es mas eficiente y conveniente para el proyecto.
+7. Eliminar lo de foto de la persona y logo de cuida del dashboard.

@@ -1,9 +1,13 @@
 import { createTaskAction, completeTaskAction } from "@/features/tasks/actions";
 import { requireCareContext, getCareCircleMembers } from "@/services/care-circle";
 import { prisma } from "@/services/db";
-import { Badge, Card, EmptyState, Field, PrimaryButton, inputClassName } from "@/components/ui";
+import { Badge, Card, EmptyState, Field, inputClassName } from "@/components/ui";
+import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { PageHeader } from "@/components/page-header";
+import { ReminderField } from "@/components/reminder-field";
+import { TaskEditButton } from "@/features/tasks/task-edit-button";
 import { formatShortDate } from "@/utils/dates";
+import { formatReminderLabel } from "@/utils/reminders";
 
 export default async function TasksPage() {
   const { careCircle } = await requireCareContext();
@@ -27,7 +31,7 @@ export default async function TasksPage() {
   return (
     <div>
       <PageHeader eyebrow="Tareas" title="Responsabilidades compartidas sin confusión.">
-        Crea tareas simples, asigna responsables cuando haga falta y registra
+        Creá tareas simples, asigná responsables cuando haga falta y registrá
         quién completó cada cuidado.
       </PageHeader>
 
@@ -56,17 +60,37 @@ export default async function TasksPage() {
                       <p className="mt-3 text-sm text-[color:var(--care-muted)]">
                         Responsable: {task.assignedTo?.name || "Sin asignar"}
                       </p>
+                      <Badge tone={task.reminderMinutes ? "teal" : "neutral"}>
+                        {formatReminderLabel(task.reminderMinutes)}
+                      </Badge>
                     </div>
                     <div className="grid justify-items-end gap-2">
+                      <TaskEditButton
+                        members={members.map((member) => ({
+                          id: member.user.id,
+                          name: member.user.name,
+                        }))}
+                        task={{
+                          id: task.id,
+                          title: task.title,
+                          description: task.description,
+                          scheduledDate: task.scheduledDate
+                            ? task.scheduledDate.toISOString().slice(0, 10)
+                            : null,
+                          scheduledTime: task.scheduledTime,
+                          reminderMinutes: task.reminderMinutes,
+                          assignedToId: task.assignedToId,
+                        }}
+                      />
                       {task.completed ? (
                         <Badge tone="success">
                           Completada por {task.completedBy?.name || "el equipo"}
                         </Badge>
                       ) : (
-                        <form action={completeTaskAction}>
+                        <ToastForm action={completeTaskAction}>
                           <input type="hidden" name="taskId" value={task.id} />
-                          <PrimaryButton type="submit">Completar</PrimaryButton>
-                        </form>
+                          <SubmitButton pendingLabel="Completando…">Completar</SubmitButton>
+                        </ToastForm>
                       )}
                     </div>
                   </div>
@@ -80,7 +104,7 @@ export default async function TasksPage() {
 
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Nueva tarea</h2>
-          <form action={createTaskAction} className="grid gap-4">
+          <ToastForm action={createTaskAction} className="grid gap-4">
             <Field label="Título">
               <input className={inputClassName} name="title" required />
             </Field>
@@ -93,6 +117,7 @@ export default async function TasksPage() {
             <Field label="Horario">
               <input className={inputClassName} type="time" name="scheduledTime" />
             </Field>
+            <ReminderField />
             <Field label="Responsable opcional">
               <select className={inputClassName} name="assignedToId" defaultValue="">
                 <option value="">Sin asignar</option>
@@ -103,8 +128,8 @@ export default async function TasksPage() {
                 ))}
               </select>
             </Field>
-            <PrimaryButton type="submit">Crear tarea</PrimaryButton>
-          </form>
+            <SubmitButton pendingLabel="Creando…">Crear tarea</SubmitButton>
+          </ToastForm>
         </Card>
       </div>
     </div>

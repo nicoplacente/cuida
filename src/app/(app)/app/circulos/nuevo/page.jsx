@@ -1,11 +1,9 @@
 import { createCareCircleAction } from "@/features/care-circles/actions";
 import { PageHeader } from "@/components/page-header";
-import { Card, Field, PrimaryButton, SecondaryLink, inputClassName } from "@/components/ui";
+import { Card, Field, SecondaryLink, inputClassName } from "@/components/ui";
+import { SubmitButton, ToastForm } from "@/components/toast-form";
 
-export default async function NewCareCirclePage({ searchParams }) {
-  const params = await searchParams;
-  const error = params?.error;
-
+export default function NewCareCirclePage() {
   return (
     <div>
       <PageHeader eyebrow="Nuevo círculo" title="Crear otro equipo de cuidado.">
@@ -13,14 +11,8 @@ export default async function NewCareCirclePage({ searchParams }) {
         misma cuenta.
       </PageHeader>
 
-      {error ? (
-        <p className="mb-5 rounded-2xl bg-[#fff4de] p-4 text-sm font-semibold text-[color:var(--care-warning)]">
-          {error}
-        </p>
-      ) : null}
-
       <Card className="max-w-2xl p-6">
-        <form action={createCareCircleAction} className="grid gap-4">
+        <ToastForm action={createCareCircleAction} className="grid gap-4">
           <Field label="Nombre del círculo">
             <input
               className={inputClassName}
@@ -53,10 +45,10 @@ export default async function NewCareCirclePage({ searchParams }) {
           </Field>
 
           <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-            <PrimaryButton type="submit">Crear círculo</PrimaryButton>
+            <SubmitButton pendingLabel="Creando…">Crear círculo</SubmitButton>
             <SecondaryLink href="/app">Cancelar</SecondaryLink>
           </div>
-        </form>
+        </ToastForm>
       </Card>
     </div>
   );

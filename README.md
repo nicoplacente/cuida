@@ -47,6 +47,24 @@ En producción:
 NEXT_PUBLIC_APP_URL="https://cuida.codeluxe.tech"
 ```
 
+Para mostrar la sección de donaciones y redirigir al enlace oficial de Mercado
+Pago, configurá:
+
+```txt
+NEXT_PUBLIC_MERCADO_PAGO_DONATION_URL="https://link.mercadopago.com.ar/tu-enlace"
+```
+
+Si la variable falta o no contiene una URL HTTPS oficial de Mercado Pago, los
+accesos de donación permanecen ocultos.
+
+Para enviar enlaces seguros de recuperación de contraseña, verificá tu dominio
+en Resend y configurá:
+
+```txt
+RESEND_API_KEY="re_..."
+RESEND_FROM_EMAIL="Cuida <no-reply@contacto.cuida.codeluxe.tech>"
+```
+
 4. Generar Prisma Client:
 
 ```bash

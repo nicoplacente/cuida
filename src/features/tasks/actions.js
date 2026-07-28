@@ -5,77 +5,191 @@ import { prisma } from "@/services/db";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
 import { cancelPendingNotifications } from "@/services/notifications";
+import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
+import { getFormField, isValidTimeInput, parseDateInput } from "@/utils/form-data";
+import { parseReminderMinutes } from "@/utils/reminders";
 
-function getField(formData, name) {
-  return String(formData.get(name) || "").trim();
-}
+async function isValidAssignee(assignedToId, careCircleId) {
+  if (!assignedToId) return true;
 
-export async function createTaskAction(formData) {
-  const { user, careCircle } = await requireCareContext();
-  const title = getField(formData, "title");
-  const description = getField(formData, "description");
-  const scheduledTime = getField(formData, "scheduledTime");
-  const scheduledDate = getField(formData, "scheduledDate");
-  const assignedToId = getField(formData, "assignedToId");
-
-  if (!careCircle || !title) {
-    return;
-  }
-
-  await prisma.careTask.create({
-    data: {
-      careCircleId: careCircle.id,
-      title,
-      description: description || null,
-      scheduledTime: scheduledTime || null,
-      scheduledDate: scheduledDate ? new Date(`${scheduledDate}T12:00:00Z`) : null,
-      assignedToId: assignedToId || null,
-    },
-  });
-
-  await createActivity({
-    careCircleId: careCircle.id,
-    userId: user.id,
-    type: "TASK_CREATED",
-    message: `${user.name} creó la tarea ${title}.`,
-  });
-
-  revalidatePath("/app");
-  revalidatePath("/app/tareas");
-}
-
-export async function completeTaskAction(formData) {
-  const { user, careCircle } = await requireCareContext();
-  const taskId = getField(formData, "taskId");
-
-  if (!careCircle || !taskId) {
-    return;
-  }
-
-  const task = await prisma.careTask.updateMany({
+  const membership = await prisma.careCircleMember.findUnique({
     where: {
-      id: taskId,
-      careCircleId: careCircle.id,
-      completed: false,
+      userId_careCircleId: { userId: assignedToId, careCircleId },
     },
-    data: {
-      completed: true,
-      completedById: user.id,
-      completedAt: new Date(),
-    },
+    select: { id: true },
   });
 
-  if (task.count > 0) {
-    await cancelPendingNotifications("TASK", taskId);
+  return Boolean(membership);
+}
 
+export async function createTaskAction(_previousState, formData) {
+  try {
+    const { user, careCircle } = await requireCareContext();
+    const title = getFormField(formData, "title");
+    const description = getFormField(formData, "description");
+    const scheduledTime = getFormField(formData, "scheduledTime");
+    const scheduledDate = getFormField(formData, "scheduledDate");
+    const assignedToId = getFormField(formData, "assignedToId");
+    const parsedReminderMinutes = parseReminderMinutes(
+      getFormField(formData, "reminderMinutes"),
+    );
+    const parsedScheduledDate = scheduledDate ? parseDateInput(scheduledDate) : null;
+
+    if (!careCircle || !title) {
+      return actionError("Ingresá un título para la tarea.");
+    }
+    if (parsedReminderMinutes === null) {
+      return actionError("Seleccioná una anticipación válida.");
+    }
+    if (scheduledDate && !parsedScheduledDate) {
+      return actionError("Ingresá una fecha válida para la tarea.");
+    }
+    if (scheduledTime && !isValidTimeInput(scheduledTime)) {
+      return actionError("Ingresá un horario válido para la tarea.");
+    }
+
+    if (!(await isValidAssignee(assignedToId, careCircle.id))) {
+      return actionError("Seleccioná un integrante válido del círculo.");
+    }
+
+    const reminderMinutes = parsedScheduledDate && scheduledTime
+      ? parsedReminderMinutes
+      : 0;
+
+    await prisma.careTask.create({
+      data: {
+        careCircleId: careCircle.id,
+        title,
+        description: description || null,
+        scheduledTime: scheduledTime || null,
+        scheduledDate: parsedScheduledDate,
+        reminderMinutes,
+        assignedToId: assignedToId || null,
+      },
+    });
+
+    await createActivity({
+      careCircleId: careCircle.id,
+      userId: user.id,
+      type: "TASK_CREATED",
+      message: `${user.name} creó la tarea ${title}.`,
+    });
+
+    revalidatePath("/app");
+    revalidatePath("/app/tareas");
+    return actionSuccess("Tarea creada correctamente.");
+  } catch (error) {
+    return unexpectedActionError("createTaskAction", error);
+  }
+}
+
+export async function updateTaskAction(_previousState, formData) {
+  try {
+    const { user, careCircle } = await requireCareContext();
+    const taskId = getFormField(formData, "taskId");
+    const title = getFormField(formData, "title");
+    const description = getFormField(formData, "description");
+    const scheduledTime = getFormField(formData, "scheduledTime");
+    const scheduledDate = getFormField(formData, "scheduledDate");
+    const assignedToId = getFormField(formData, "assignedToId");
+    const parsedReminderMinutes = parseReminderMinutes(
+      getFormField(formData, "reminderMinutes"),
+    );
+    const parsedScheduledDate = scheduledDate ? parseDateInput(scheduledDate) : null;
+
+    if (!careCircle || !taskId || !title) {
+      return actionError("Revisá los datos de la tarea.");
+    }
+    if (parsedReminderMinutes === null) {
+      return actionError("Seleccioná una anticipación válida.");
+    }
+    if (scheduledDate && !parsedScheduledDate) {
+      return actionError("Ingresá una fecha válida para la tarea.");
+    }
+    if (scheduledTime && !isValidTimeInput(scheduledTime)) {
+      return actionError("Ingresá un horario válido para la tarea.");
+    }
+
+    if (!(await isValidAssignee(assignedToId, careCircle.id))) {
+      return actionError("Seleccioná un integrante válido del círculo.");
+    }
+
+    const task = await prisma.careTask.findFirst({
+      where: { id: taskId, careCircleId: careCircle.id },
+      select: { id: true },
+    });
+
+    if (!task) {
+      return actionError("La tarea no está disponible.");
+    }
+
+    const reminderMinutes = parsedScheduledDate && scheduledTime
+      ? parsedReminderMinutes
+      : 0;
+
+    await prisma.$transaction([
+      prisma.careTask.update({
+        where: { id: taskId },
+        data: {
+          title,
+          description: description || null,
+          scheduledTime: scheduledTime || null,
+          scheduledDate: parsedScheduledDate,
+          reminderMinutes,
+          assignedToId: assignedToId || null,
+        },
+      }),
+      prisma.notification.deleteMany({
+        where: { type: "TASK", sourceId: taskId, sentAt: null },
+      }),
+      prisma.activity.create({
+        data: {
+          careCircleId: careCircle.id,
+          userId: user.id,
+          type: "TASK_UPDATED",
+          message: `${user.name} actualizó la tarea ${title}.`,
+        },
+      }),
+    ]);
+
+    revalidatePath("/app");
+    revalidatePath("/app/tareas");
+    return actionSuccess("Tarea actualizada correctamente.");
+  } catch (error) {
+    return unexpectedActionError("updateTaskAction", error);
+  }
+}
+
+export async function completeTaskAction(_previousState, formData) {
+  try {
+    const { user, careCircle } = await requireCareContext();
+    const taskId = getFormField(formData, "taskId");
+
+    if (!careCircle || !taskId) {
+      return actionError("No pudimos identificar la tarea.");
+    }
+
+    const task = await prisma.careTask.updateMany({
+      where: { id: taskId, careCircleId: careCircle.id, completed: false },
+      data: { completed: true, completedById: user.id, completedAt: new Date() },
+    });
+
+    if (task.count !== 1) {
+      return actionError("La tarea ya fue completada o no está disponible.");
+    }
+
+    await cancelPendingNotifications("TASK", taskId);
     await createActivity({
       careCircleId: careCircle.id,
       userId: user.id,
       type: "TASK_COMPLETED",
       message: `${user.name} completó una tarea compartida.`,
     });
-  }
 
-  revalidatePath("/app");
-  revalidatePath("/app/tareas");
+    revalidatePath("/app");
+    revalidatePath("/app/tareas");
+    return actionSuccess("Tarea completada.");
+  } catch (error) {
+    return unexpectedActionError("completeTaskAction", error);
+  }
 }

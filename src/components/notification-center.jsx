@@ -3,6 +3,7 @@ import {
   markNotificationReadAction,
 } from "@/features/notifications/actions";
 import { PushPermissionControl } from "@/components/push-permission-control";
+import { SecondarySubmitButton, ToastForm } from "@/components/toast-form";
 import { formatShortDate, formatTime } from "@/utils/dates";
 
 export function NotificationCenter({ notifications, unreadCount, publicKey }) {
@@ -21,18 +22,18 @@ export function NotificationCenter({ notifications, unreadCount, publicKey }) {
           </span>
         ) : null}
       </summary>
-      <div className="absolute right-0 z-50 mt-3 w-[min(92vw,380px)] rounded-2xl border border-[color:var(--care-cloud)] bg-white p-4 shadow-[0_22px_70px_rgba(11,31,58,0.16)]">
+      <div className="absolute right-[-3rem] z-50 mt-3 w-[calc(100vw-2rem)] rounded-2xl border border-[color:var(--care-cloud)] bg-white p-4 shadow-[0_22px_70px_rgba(11,31,58,0.16)] sm:right-0 sm:w-[min(92vw,380px)]">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <p className="font-semibold">Notificaciones</p>
             <p className="text-xs text-[color:var(--care-muted)]">Cuidados que requieren atención</p>
           </div>
           {unreadCount ? (
-            <form action={markAllNotificationsReadAction}>
-              <button className="text-xs font-semibold text-[color:var(--care-ink-soft)]" type="submit">
+            <ToastForm action={markAllNotificationsReadAction}>
+              <SecondarySubmitButton className="min-h-0 border-0 px-0 py-0 text-xs" pendingLabel="Marcando…">
                 Marcar todas
-              </button>
-            </form>
+              </SecondarySubmitButton>
+            </ToastForm>
           ) : null}
         </div>
 
@@ -59,12 +60,12 @@ export function NotificationCenter({ notifications, unreadCount, publicKey }) {
                   </p>
                 </a>
                 {isUnread ? (
-                  <form action={markNotificationReadAction} className="mt-2">
+                  <ToastForm action={markNotificationReadAction} className="mt-2">
                     <input type="hidden" name="notificationId" value={notification.id} />
-                    <button type="submit" className="text-xs font-semibold text-[color:var(--care-ink-soft)]">
+                    <SecondarySubmitButton className="min-h-0 border-0 px-0 py-0 text-xs" pendingLabel="Marcando…">
                       Marcar como leída
-                    </button>
-                  </form>
+                    </SecondarySubmitButton>
+                  </ToastForm>
                 ) : null}
               </article>
               );

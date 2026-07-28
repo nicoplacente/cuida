@@ -1,11 +1,10 @@
 import Image from "next/image";
 import { registerAction } from "@/app/(auth)/actions";
-import { Card, Field, PrimaryButton, SecondaryLink, inputClassName } from "@/components/ui";
+import { PasswordField } from "@/components/password-field";
+import { SubmitButton, ToastForm } from "@/components/toast-form";
+import { Card, Field, SecondaryLink, inputClassName } from "@/components/ui";
 
-export default async function RegisterPage({ searchParams }) {
-  const params = await searchParams;
-  const error = params?.error;
-
+export default function RegisterPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-[color:var(--care-canvas)] px-4 py-10">
       <Card className="w-full max-w-2xl p-6 sm:p-8">
@@ -23,21 +22,20 @@ export default async function RegisterPage({ searchParams }) {
               Crear tu círculo de cuidado
             </h1>
             <p className="text-sm text-[color:var(--care-muted)]">
-              Configura el primer paciente y tu usuario administrador.
+              Configurá el primer paciente y tu usuario administrador.
             </p>
           </div>
         </div>
 
-        {error ? (
-          <p className="mb-5 rounded-2xl bg-[#fff4de] p-4 text-sm font-semibold text-[color:var(--care-warning)]">
-            {error}
-          </p>
-        ) : null}
-
-        <form action={registerAction} className="grid gap-4">
+        <ToastForm action={registerAction} className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Tu nombre">
-              <input className={inputClassName} name="name" required />
+            <Field label="Nombre completo">
+              <input
+                className={inputClassName}
+                name="name"
+                autoComplete="name"
+                required
+              />
             </Field>
             <Field label="Email">
               <input
@@ -49,13 +47,13 @@ export default async function RegisterPage({ searchParams }) {
               />
             </Field>
           </div>
-          <Field label="Contraseña">
-            <input
-              className={inputClassName}
-              type="password"
+          <Field label="Contraseña" htmlFor="register-password">
+            <PasswordField
+              id="register-password"
               name="password"
               autoComplete="new-password"
               minLength={8}
+              maxLength={128}
               required
             />
           </Field>
@@ -80,10 +78,10 @@ export default async function RegisterPage({ searchParams }) {
               placeholder="Ejemplo: Alzheimer etapa inicial"
             />
           </Field>
-          <PrimaryButton type="submit" className="mt-2 w-full">
+          <SubmitButton pendingLabel="Creando cuenta…" className="mt-2 w-full">
             Comenzar gratis
-          </PrimaryButton>
-        </form>
+          </SubmitButton>
+        </ToastForm>
 
         <div className="mt-6 text-center">
           <SecondaryLink href="/login">Ya tengo cuenta</SecondaryLink>

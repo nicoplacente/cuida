@@ -1,13 +1,13 @@
 import { uploadDocumentAction } from "@/features/documents/actions";
 import { requireCareContext } from "@/services/care-circle";
 import { prisma } from "@/services/db";
-import { Badge, Card, EmptyState, Field, PrimaryButton, inputClassName } from "@/components/ui";
+import { Badge, Card, EmptyState, Field, inputClassName } from "@/components/ui";
+import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { PageHeader } from "@/components/page-header";
 import { formatShortDate } from "@/utils/dates";
 
-export default async function DocumentsPage({ searchParams }) {
+export default async function DocumentsPage() {
   const { careCircle } = await requireCareContext();
-  const params = await searchParams;
 
   if (!careCircle) {
     return <EmptyState title="No hay círculo activo." />;
@@ -24,21 +24,9 @@ export default async function DocumentsPage({ searchParams }) {
   return (
     <div>
       <PageHeader eyebrow="Documentos" title="Recetas, estudios y archivos importantes a mano.">
-        Guarda documentos médicos protegidos para que solo el grupo familiar
+        Guardá documentos médicos protegidos para que solo el grupo familiar
         pueda acceder a ellos.
       </PageHeader>
-
-      {params?.error ? (
-        <p className="mb-5 rounded-2xl bg-[#fff4de] p-4 text-sm font-semibold text-[color:var(--care-warning)]">
-          {params.error}
-        </p>
-      ) : null}
-
-      {params?.success ? (
-        <p className="mb-5 rounded-2xl bg-[#e6f7ef] p-4 text-sm font-semibold text-[color:var(--care-success)]">
-          {params.success}
-        </p>
-      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <Card className="p-6">
@@ -82,7 +70,13 @@ export default async function DocumentsPage({ searchParams }) {
 
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Subir documento</h2>
-          <form action={uploadDocumentAction} className="grid gap-4">
+          <ToastForm
+            action={uploadDocumentAction}
+            className="grid gap-4"
+            refreshOnSuccess
+            resetOnSuccess
+            showStatus
+          >
             <Field label="Título">
               <input className={inputClassName} name="title" required />
             </Field>
@@ -102,8 +96,8 @@ export default async function DocumentsPage({ searchParams }) {
             <Field label="Notas">
               <textarea className={inputClassName} name="notes" rows={4} />
             </Field>
-            <PrimaryButton type="submit">Subir documento</PrimaryButton>
-          </form>
+            <SubmitButton pendingLabel="Subiendo…">Subir documento</SubmitButton>
+          </ToastForm>
         </Card>
       </div>
     </div>

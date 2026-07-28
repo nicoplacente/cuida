@@ -1,6 +1,8 @@
+import "./load-environment.js";
 import { setTimeout as wait } from "node:timers/promises";
 import { prisma } from "../src/services/db.js";
 import {
+  configureWebPush,
   deliverDueNotifications,
   materializeUpcomingNotifications,
 } from "../src/services/notifications.js";
@@ -16,6 +18,8 @@ process.on("SIGINT", stop);
 process.on("SIGTERM", stop);
 
 async function run() {
+  configureWebPush();
+  await prisma.$queryRaw`SELECT 1`;
   console.log("Worker de notificaciones iniciado.");
 
   while (!stopping) {

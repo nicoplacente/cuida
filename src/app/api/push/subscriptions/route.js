@@ -23,54 +23,64 @@ function isValidSubscription(subscription) {
 }
 
 export async function POST(request) {
-  if (!isSameOrigin(request)) {
-    return Response.json({ error: "Origen inválido." }, { status: 403 });
+  try {
+    if (!isSameOrigin(request)) {
+      return Response.json({ error: "Solicitud no válida." }, { status: 403 });
+    }
+
+    const user = await getCurrentUser();
+    if (!user) {
+      return Response.json({ error: "No autorizado." }, { status: 401 });
+    }
+
+    const subscription = await request.json().catch(() => null);
+    if (!isValidSubscription(subscription)) {
+      return Response.json({ error: "Solicitud no válida." }, { status: 400 });
+    }
+
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: subscription.endpoint },
+      update: {
+        userId: user.id,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      },
+      create: {
+        userId: user.id,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      },
+    });
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error("[pushSubscription:POST]", error);
+    return Response.json({ error: "No pudimos completar la operación." }, { status: 500 });
   }
-
-  const user = await getCurrentUser();
-  if (!user) {
-    return Response.json({ error: "No autorizado." }, { status: 401 });
-  }
-
-  const subscription = await request.json().catch(() => null);
-  if (!isValidSubscription(subscription)) {
-    return Response.json({ error: "Suscripción inválida." }, { status: 400 });
-  }
-
-  await prisma.pushSubscription.upsert({
-    where: { endpoint: subscription.endpoint },
-    update: {
-      userId: user.id,
-      p256dh: subscription.keys.p256dh,
-      auth: subscription.keys.auth,
-    },
-    create: {
-      userId: user.id,
-      endpoint: subscription.endpoint,
-      p256dh: subscription.keys.p256dh,
-      auth: subscription.keys.auth,
-    },
-  });
-
-  return Response.json({ success: true });
 }
 
 export async function DELETE(request) {
-  if (!isSameOrigin(request)) {
-    return Response.json({ error: "Origen inválido." }, { status: 403 });
-  }
+  try {
+    if (!isSameOrigin(request)) {
+      return Response.json({ error: "Solicitud no válida." }, { status: 403 });
+    }
 
-  const user = await getCurrentUser();
-  if (!user) {
-    return Response.json({ error: "No autorizado." }, { status: 401 });
-  }
+    const user = await getCurrentUser();
+    if (!user) {
+      return Response.json({ error: "No autorizado." }, { status: 401 });
+    }
 
-  const body = await request.json().catch(() => null);
-  const endpoint = typeof body?.endpoint === "string" ? body.endpoint : "";
-  if (!endpoint) {
-    return Response.json({ error: "Endpoint inválido." }, { status: 400 });
-  }
+    const body = await request.json().catch(() => null);
+    const endpoint = typeof body?.endpoint === "string" ? body.endpoint : "";
+    if (!endpoint) {
+      return Response.json({ error: "Solicitud no válida." }, { status: 400 });
+    }
 
-  await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: user.id } });
-  return Response.json({ success: true });
+    await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: user.id } });
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error("[pushSubscription:DELETE]", error);
+    return Response.json({ error: "No pudimos completar la operación." }, { status: 500 });
+  }
 }

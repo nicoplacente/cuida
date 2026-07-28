@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PwaRegistration } from "@/components/pwa-registration";
+import { ToastProvider } from "@/components/toast-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col text-[17px] leading-relaxed">
         <PwaRegistration />
+        <ToastProvider />
         {children}
       </body>
     </html>

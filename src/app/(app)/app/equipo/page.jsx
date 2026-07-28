@@ -1,9 +1,10 @@
 import { createInvitationAction } from "@/features/team/actions";
 import { requireCareContext, getCareCircleMembers } from "@/services/care-circle";
 import { prisma } from "@/services/db";
-import { Badge, Card, EmptyState, Field, PrimaryButton, inputClassName } from "@/components/ui";
+import { InvitationForm } from "@/components/invitation-form";
+import { ShareInvitationButton } from "@/components/share-invitation-modal";
+import { Badge, Card, EmptyState } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
-import { CopyButton } from "@/components/copy-button";
 import { formatShortDate } from "@/utils/dates";
 import { getAppUrl } from "@/utils/app-url";
 
@@ -13,9 +14,8 @@ const roleLabels = {
   OBSERVER: "Observador",
 };
 
-export default async function TeamPage({ searchParams }) {
+export default async function TeamPage() {
   const { user, careCircle } = await requireCareContext();
-  const params = await searchParams;
 
   if (!careCircle) {
     return <EmptyState title="No hay círculo activo." />;
@@ -46,9 +46,6 @@ export default async function TeamPage({ searchParams }) {
 
   const isAdmin = currentMembership?.role === "ADMIN";
   const appUrl = getAppUrl();
-  const invitationLink = params?.token
-    ? `${appUrl}/invitacion/${params.token}`
-    : null;
 
   return (
     <div>
@@ -56,35 +53,6 @@ export default async function TeamPage({ searchParams }) {
         Una persona crea el círculo de cuidado y después suma familiares o
         cuidadores con permisos claros.
       </PageHeader>
-
-      {params?.error ? (
-        <p className="mb-5 rounded-2xl bg-[#fff4de] p-4 text-sm font-semibold text-[color:var(--care-warning)]">
-          {params.error}
-        </p>
-      ) : null}
-
-      {params?.success ? (
-        <p className="mb-5 rounded-2xl bg-[#e6f7ef] p-4 text-sm font-semibold text-[color:var(--care-success)]">
-          {params.success}
-        </p>
-      ) : null}
-
-      {invitationLink ? (
-        <Card className="mb-6 p-5">
-          <p className="text-sm font-semibold text-[color:var(--care-muted)]">
-            Enlace de invitación
-          </p>
-          <p className="mt-2 break-all rounded-2xl bg-[#f8fbfd] p-4 font-mono text-sm text-[color:var(--care-ink)]">
-            {invitationLink}
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <CopyButton value={invitationLink} />
-            <p className="text-sm text-[color:var(--care-muted)]">
-              Compartí este enlace manualmente con la persona invitada.
-            </p>
-          </div>
-        </Card>
-      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="grid gap-6">
@@ -136,13 +104,13 @@ export default async function TeamPage({ searchParams }) {
                       </div>
                       <Badge tone="warning">{roleLabels[invitation.role]}</Badge>
                     </div>
-                    <div className="mt-3 grid gap-3 rounded-2xl bg-white p-3">
-                      <p className="break-all font-mono text-xs text-[color:var(--care-ink-soft)]">
-                        {appUrl}/invitacion/{invitation.token}
-                      </p>
-                      <CopyButton
-                        value={`${appUrl}/invitacion/${invitation.token}`}
-                        label="Copiar"
+                    <div className="mt-3">
+                      <ShareInvitationButton
+                        invitation={{
+                          email: invitation.email,
+                          name: invitation.name || invitation.email,
+                          link: `${appUrl}/invitacion/${invitation.token}`,
+                        }}
                       />
                     </div>
                   </article>
@@ -157,21 +125,7 @@ export default async function TeamPage({ searchParams }) {
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Invitar miembro</h2>
           {isAdmin ? (
-            <form action={createInvitationAction} className="grid gap-4">
-              <Field label="Nombre opcional">
-                <input className={inputClassName} name="name" />
-              </Field>
-              <Field label="Email">
-                <input className={inputClassName} type="email" name="email" required />
-              </Field>
-              <Field label="Rol">
-                <select className={inputClassName} name="role" defaultValue="CAREGIVER">
-                  <option value="CAREGIVER">Cuidador</option>
-                  <option value="OBSERVER">Observador</option>
-                </select>
-              </Field>
-              <PrimaryButton type="submit">Crear invitación</PrimaryButton>
-            </form>
+            <InvitationForm action={createInvitationAction} />
           ) : (
             <EmptyState title="Solo administradores pueden invitar miembros.">
               Pedí a un administrador del círculo que cree la invitación.

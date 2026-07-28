@@ -1,5 +1,7 @@
 import Image from "next/image";
 import { Badge, Card, LinkButton, SectionTitle, Shell } from "@/components/ui";
+import { MobileLandingNavigation } from "@/components/mobile-landing-navigation";
+import { getDonationUrl } from "@/utils/donation-url";
 
 const features = [
   "Medicación",
@@ -19,6 +21,8 @@ const problemPoints = [
 ];
 
 export default function Home() {
+  const donationUrl = getDonationUrl();
+
   return (
     <main className="min-h-screen bg-[color:var(--care-canvas)]">
       <header className="relative z-40 border-b border-[color:var(--care-cloud)] bg-white/85 backdrop-blur">
@@ -41,6 +45,11 @@ export default function Home() {
             <a href="#caracteristicas" className="hover:text-[color:var(--care-ink)]">
               Características
             </a>
+            {donationUrl ? (
+              <a href="#donaciones" className="hover:text-[color:var(--care-ink)]">
+                Donar
+              </a>
+            ) : null}
             <a href="/login" className="hover:text-[color:var(--care-ink)]">
               Ingresar
             </a>
@@ -48,25 +57,7 @@ export default function Home() {
               Comenzar gratis
             </LinkButton>
           </nav>
-          <details className="group md:hidden">
-            <summary className="flex min-h-10 cursor-pointer list-none items-center rounded-full border border-[color:var(--care-cloud)] bg-white px-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-              Menú
-            </summary>
-            <nav className="absolute inset-x-4 top-[calc(100%-4px)] z-30 grid gap-1 rounded-2xl border border-[color:var(--care-cloud)] bg-white p-4 shadow-[0_22px_70px_rgba(11,31,58,0.16)] sm:inset-x-6">
-              <a href="#solucion" className="rounded-xl px-3 py-3 font-semibold hover:bg-[color:var(--care-canvas)]">
-                Solución
-              </a>
-              <a href="#caracteristicas" className="rounded-xl px-3 py-3 font-semibold hover:bg-[color:var(--care-canvas)]">
-                Características
-              </a>
-              <a href="/login" className="rounded-xl px-3 py-3 font-semibold hover:bg-[color:var(--care-canvas)]">
-                Ingresar
-              </a>
-              <LinkButton href="/registro" className="mt-2 w-full">
-                Comenzar gratis
-              </LinkButton>
-            </nav>
-          </details>
+          <MobileLandingNavigation showDonations={Boolean(donationUrl)} />
         </Shell>
       </header>
 
@@ -79,7 +70,7 @@ export default function Home() {
               Cuidar juntos ahora es más fácil
             </h1>
             <p className="mt-6 max-w-2xl text-xl leading-8 text-[color:var(--care-ink-soft)]">
-              Organiza medicamentos, turnos, tareas y cuidados diarios de tus
+              Organizá medicamentos, turnos, tareas y cuidados diarios de tus
               seres queridos en un solo lugar.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -208,6 +199,32 @@ export default function Home() {
           </Card>
         </Shell>
       </section>
+
+      {donationUrl ? (
+        <section id="donaciones" className="bg-white py-20 scroll-mt-4">
+          <Shell>
+            <Card className="grid gap-8 overflow-hidden p-8 lg:grid-cols-[1fr_auto] lg:items-center lg:p-10">
+              <SectionTitle
+                eyebrow="Sostener Cuida"
+                title="Si Cuida te ayuda, podés ayudarnos a mantenerla disponible."
+              >
+                Cuida seguirá siendo gratuita. Si querés colaborar, tu aporte
+                nos ayuda a cubrir los servidores que hoy sostenemos nosotros.
+                No es obligatorio: cualquier ayuda, del monto que elijas, suma.
+              </SectionTitle>
+              <LinkButton
+                href={donationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Donar por Mercado Pago (se abre en una pestaña nueva)"
+                className="w-full sm:w-fit"
+              >
+                Donar por Mercado Pago
+              </LinkButton>
+            </Card>
+          </Shell>
+        </section>
+      ) : null}
     </main>
   );
 }

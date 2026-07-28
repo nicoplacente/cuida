@@ -12,7 +12,7 @@ export default async function DashboardPage() {
     return (
       <Card className="p-8">
         <EmptyState title="Todavía no hay un círculo activo.">
-          Crea un círculo de cuidado para empezar a organizar la información.
+          Creá un círculo de cuidado para empezar a organizar la información.
         </EmptyState>
       </Card>
     );
@@ -24,9 +24,16 @@ export default async function DashboardPage() {
     <div>
       <PageHeader eyebrow="Dashboard" title={`Buenos días, ${user.name}.`}>
         Hoy {patient.name} tiene {data.pendingMedications}{" "}
-        {data.pendingMedications === 1 ? "medicamento pendiente" : "medicamentos pendientes"},{" "}
-        {data.events.length} {data.events.length === 1 ? "turno médico" : "turnos médicos"} y{" "}
-        {data.pendingTasks} {data.pendingTasks === 1 ? "tarea por completar" : "tareas por completar"}.
+        {data.pendingMedications === 1
+          ? "medicamento pendiente"
+          : "medicamentos pendientes"}
+        , {data.events.length}{" "}
+        {data.events.length === 1 ? "turno médico" : "turnos médicos"} y{" "}
+        {data.pendingTasks}{" "}
+        {data.pendingTasks === 1
+          ? "tarea por completar"
+          : "tareas por completar"}
+        .
       </PageHeader>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
@@ -47,11 +54,11 @@ export default async function DashboardPage() {
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em]">
                   {patient.name}, {patient.age} años
                 </h2>
-                <p className="mt-2 font-semibold text-[color:var(--care-ink-soft)]">
+                <p className="mt-2 font-semibold text-(--care-ink-soft)">
                   {patient.medicalCondition || "Sin condición médica cargada"}
                 </p>
                 {patient.importantNotes ? (
-                  <p className="mt-4 rounded-2xl bg-[#f8fbfd] p-4 text-sm text-[color:var(--care-ink-soft)]">
+                  <p className="mt-4 rounded-2xl bg-[#f8fbfd] p-4 text-sm text-(--care-ink-soft)">
                     {patient.importantNotes}
                   </p>
                 ) : null}
@@ -61,19 +68,23 @@ export default async function DashboardPage() {
 
           <section className="grid gap-4 sm:grid-cols-3">
             <Card className="p-5">
-              <p className="text-sm font-semibold text-[color:var(--care-muted)]">
+              <p className="text-sm font-semibold text-(--care-muted)">
                 Medicación pendiente
               </p>
-              <p className="mt-3 text-4xl font-semibold">{data.pendingMedications}</p>
+              <p className="mt-3 text-4xl font-semibold">
+                {data.pendingMedications}
+              </p>
             </Card>
             <Card className="p-5">
-              <p className="text-sm font-semibold text-[color:var(--care-muted)]">
+              <p className="text-sm font-semibold text-(--care-muted)">
                 Turnos de hoy
               </p>
-              <p className="mt-3 text-4xl font-semibold">{data.events.length}</p>
+              <p className="mt-3 text-4xl font-semibold">
+                {data.events.length}
+              </p>
             </Card>
             <Card className="p-5">
-              <p className="text-sm font-semibold text-[color:var(--care-muted)]">
+              <p className="text-sm font-semibold text-(--care-muted)">
                 Tareas pendientes
               </p>
               <p className="mt-3 text-4xl font-semibold">{data.pendingTasks}</p>
@@ -91,11 +102,11 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={medication.id}
-                    className="rounded-2xl border border-[color:var(--care-cloud)] bg-[#f8fbfd] p-4"
+                    className="rounded-2xl border border-(--care-cloud) bg-[#f8fbfd] p-4"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-[color:var(--care-muted)]">
+                        <p className="text-sm font-semibold text-(--care-muted)">
                           {medication.schedule}
                         </p>
                         <p className="text-lg font-semibold">
@@ -144,7 +155,10 @@ export default async function DashboardPage() {
               tabIndex={0}
             >
               {data.activities.map((activity) => (
-                <div key={activity.id} className="border-l-2 border-[color:var(--care-teal)] pl-4">
+                <div
+                  key={activity.id}
+                  className="border-l-2 border-[color:var(--care-teal)] pl-4"
+                >
                   <p className="font-semibold">{activity.message}</p>
                   <p className="text-sm text-[color:var(--care-muted)]">
                     {formatTime(activity.createdAt)}

@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useActionState, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { initialActionState } from "@/utils/action-result";
 
 export function CareCircleSwitcher({
   action,
@@ -9,9 +11,20 @@ export function CareCircleSwitcher({
   className = "hidden sm:block",
 }) {
   const formRef = useRef(null);
+  const lastToastId = useRef(null);
+  const [state, formAction] = useActionState(action, initialActionState);
+
+  useEffect(() => {
+    if (!state?.id || state.id === lastToastId.current) {
+      return;
+    }
+
+    lastToastId.current = state.id;
+    toast.error(state.message);
+  }, [state]);
 
   return (
-    <form ref={formRef} action={action} className={className}>
+    <form ref={formRef} action={formAction} className={className}>
       <label className="sr-only" htmlFor="careCircleId">
         Cambiar círculo de cuidado
       </label>

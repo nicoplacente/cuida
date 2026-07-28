@@ -1,7 +1,8 @@
 import { createLogAction } from "@/features/timeline/actions";
 import { requireCareContext } from "@/services/care-circle";
 import { prisma } from "@/services/db";
-import { Badge, Card, EmptyState, Field, PrimaryButton, inputClassName } from "@/components/ui";
+import { Badge, Card, EmptyState, Field, inputClassName } from "@/components/ui";
+import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { PageHeader } from "@/components/page-header";
 import { formatTime } from "@/utils/dates";
 
@@ -33,7 +34,7 @@ export default async function TimelinePage() {
   return (
     <div>
       <PageHeader eyebrow="Historial diario" title="Una línea de tiempo humana y clara.">
-        Registra comidas, ánimo, sueño, síntomas, comportamiento e incidentes
+        Registrá comidas, ánimo, sueño, síntomas, comportamiento e incidentes
         para que la evolución no dependa de la memoria.
       </PageHeader>
 
@@ -63,7 +64,7 @@ export default async function TimelinePage() {
 
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Nuevo registro</h2>
-          <form action={createLogAction} className="grid gap-4">
+          <ToastForm action={createLogAction} className="grid gap-4">
             <Field label="Tipo">
               <select className={inputClassName} name="type" defaultValue="NOTE">
                 {logTypes.map(([value, label]) => (
@@ -82,8 +83,8 @@ export default async function TimelinePage() {
                 required
               />
             </Field>
-            <PrimaryButton type="submit">Agregar al historial</PrimaryButton>
-          </form>
+            <SubmitButton pendingLabel="Agregando…">Agregar al historial</SubmitButton>
+          </ToastForm>
         </Card>
       </div>
     </div>

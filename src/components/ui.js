@@ -47,11 +47,12 @@ export function PrimaryButton({ children, className = "", ...props }) {
   );
 }
 
-export function LinkButton({ children, className = "", href }) {
+export function LinkButton({ children, className = "", href, ...props }) {
   return (
     <a
       className={`inline-flex min-h-12 items-center justify-center rounded-full bg-[color:var(--care-teal)] px-6 py-3 text-base font-semibold text-[color:var(--care-ink)] transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${className}`}
       href={href}
+      {...props}
     >
       {children}
     </a>
@@ -69,7 +70,16 @@ export function SecondaryLink({ children, className = "", href }) {
   );
 }
 
-export function Field({ label, children }) {
+export function Field({ label, children, htmlFor }) {
+  if (htmlFor) {
+    return (
+      <div className="grid gap-2 text-sm font-semibold text-[color:var(--care-ink)]">
+        <label htmlFor={htmlFor}>{label}</label>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <label className="grid gap-2 text-sm font-semibold text-[color:var(--care-ink)]">
       <span>{label}</span>

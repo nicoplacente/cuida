@@ -1,9 +1,13 @@
 import { createEventAction } from "@/features/calendar/actions";
 import { requireCareContext } from "@/services/care-circle";
 import { prisma } from "@/services/db";
-import { Badge, Card, EmptyState, Field, PrimaryButton, inputClassName } from "@/components/ui";
+import { Badge, Card, EmptyState, Field, inputClassName } from "@/components/ui";
+import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { PageHeader } from "@/components/page-header";
+import { ReminderField } from "@/components/reminder-field";
+import { EventEditButton } from "@/features/calendar/event-edit-button";
 import { formatShortDate } from "@/utils/dates";
+import { formatReminderLabel } from "@/utils/reminders";
 
 export default async function CalendarPage() {
   const { careCircle } = await requireCareContext();
@@ -20,7 +24,7 @@ export default async function CalendarPage() {
   return (
     <div>
       <PageHeader eyebrow="Calendario" title="Turnos, controles y visitas en un solo lugar.">
-        Agenda consultas médicas, estudios, controles y visitas para que todo el
+        Agendá consultas médicas, estudios, controles y visitas para que todo el
         equipo sepa qué viene.
       </PageHeader>
 
@@ -39,6 +43,9 @@ export default async function CalendarPage() {
                       <Badge tone="teal">
                         {formatShortDate(event.date)} · {event.time}
                       </Badge>
+                      <Badge tone={event.reminderMinutes ? "teal" : "neutral"}>
+                        {formatReminderLabel(event.reminderMinutes)}
+                      </Badge>
                       <h3 className="mt-3 text-xl font-semibold">{event.title}</h3>
                       {event.location ? (
                         <p className="mt-2 text-sm font-semibold text-[color:var(--care-ink-soft)]">
@@ -51,6 +58,17 @@ export default async function CalendarPage() {
                         </p>
                       ) : null}
                     </div>
+                    <EventEditButton
+                      event={{
+                        id: event.id,
+                        title: event.title,
+                        date: event.date.toISOString().slice(0, 10),
+                        time: event.time,
+                        reminderMinutes: event.reminderMinutes,
+                        location: event.location,
+                        notes: event.notes,
+                      }}
+                    />
                   </div>
                 </article>
               ))
@@ -62,7 +80,7 @@ export default async function CalendarPage() {
 
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Nuevo evento</h2>
-          <form action={createEventAction} className="grid gap-4">
+          <ToastForm action={createEventAction} className="grid gap-4">
             <Field label="Título">
               <input className={inputClassName} name="title" required />
             </Field>
@@ -72,14 +90,15 @@ export default async function CalendarPage() {
             <Field label="Hora">
               <input className={inputClassName} type="time" name="time" required />
             </Field>
+            <ReminderField />
             <Field label="Ubicación">
               <input className={inputClassName} name="location" />
             </Field>
             <Field label="Notas">
               <textarea className={inputClassName} name="notes" rows={4} />
             </Field>
-            <PrimaryButton type="submit">Crear evento</PrimaryButton>
-          </form>
+            <SubmitButton pendingLabel="Creando…">Crear evento</SubmitButton>
+          </ToastForm>
         </Card>
       </div>
     </div>

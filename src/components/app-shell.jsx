@@ -5,6 +5,9 @@ import { requireCareContext } from "@/services/care-circle";
 import { CareCircleSwitcher } from "@/components/care-circle-switcher";
 import { SecondaryLink } from "@/components/ui";
 import { NotificationCenter } from "@/components/notification-center";
+import { LogoutIcon } from "@/components/icons/logout-icon";
+import { MenuIcon } from "@/components/icons/menu-icon";
+import { ToastForm } from "@/components/toast-form";
 import { prisma } from "@/services/db";
 
 const navigation = [
@@ -93,22 +96,25 @@ export async function AppShell({ children }) {
                 {patient?.name ? `Cuidando a ${patient.name}` : "Administrador"}
               </p>
             </div>
-            <form action={logoutAction}>
+            <ToastForm action={logoutAction}>
               <button
-                className="rounded-full border border-[color:var(--care-cloud)] bg-white px-4 py-2 text-sm font-semibold transition hover:border-[color:var(--care-teal)]"
+                aria-label="Cerrar sesión"
+                className="flex size-10 items-center justify-center rounded-full border border-[color:var(--care-cloud)] bg-white text-[color:var(--care-ink-soft)] transition hover:border-[color:var(--care-teal)] hover:text-[color:var(--care-ink)]"
+                title="Cerrar sesión"
                 type="submit"
               >
-                Salir
+                <LogoutIcon />
               </button>
-            </form>
+            </ToastForm>
             </div>
 
             <details name="app-header-popover" className="group relative lg:hidden">
               <summary
                 aria-label="Abrir menú de navegación"
-                className="flex min-h-10 cursor-pointer list-none items-center rounded-full border border-[color:var(--care-cloud)] bg-white px-4 text-sm font-semibold transition hover:border-[color:var(--care-teal)] [&::-webkit-details-marker]:hidden"
+                className="flex size-10 cursor-pointer list-none items-center justify-center rounded-full border border-[color:var(--care-cloud)] bg-white text-[color:var(--care-ink-soft)] transition hover:border-[color:var(--care-teal)] hover:text-[color:var(--care-ink)] [&::-webkit-details-marker]:hidden"
+                title="Abrir menú de navegación"
               >
-                Menú
+                <MenuIcon />
               </summary>
               <div className="absolute right-0 z-50 mt-3 w-[min(92vw,360px)] rounded-2xl border border-[color:var(--care-cloud)] bg-white p-4 shadow-[0_22px_70px_rgba(11,31,58,0.16)]">
                 <div className="rounded-xl bg-[color:var(--care-canvas)] p-4">
@@ -148,14 +154,16 @@ export async function AppShell({ children }) {
                   <SecondaryLink href="/app/circulos/nuevo" className="min-h-10 px-4 py-2 text-sm">
                     Nuevo círculo
                   </SecondaryLink>
-                  <form action={logoutAction}>
+                  <ToastForm action={logoutAction}>
                     <button
-                      className="min-h-10 w-full rounded-full border border-[color:var(--care-cloud)] bg-white px-4 py-2 text-sm font-semibold transition hover:border-[color:var(--care-teal)]"
+                      aria-label="Cerrar sesión"
+                      className="mx-auto flex size-10 items-center justify-center rounded-full border border-[color:var(--care-cloud)] bg-white text-[color:var(--care-ink-soft)] transition hover:border-[color:var(--care-teal)] hover:text-[color:var(--care-ink)]"
+                      title="Cerrar sesión"
                       type="submit"
                     >
-                      Cerrar sesión
+                      <LogoutIcon />
                     </button>
-                  </form>
+                  </ToastForm>
                 </div>
               </div>
             </details>

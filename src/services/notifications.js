@@ -1,5 +1,9 @@
 import webpush from "web-push";
 import { prisma } from "./db.js";
+import {
+  buildNotificationOccurrenceKey,
+  getReminderScheduledFor,
+} from "../utils/reminders.js";
 
 const APP_TIME_ZONE = process.env.APP_TIME_ZONE || "America/Argentina/Buenos_Aires";
 const APP_TIME_ZONE_OFFSET = process.env.APP_TIME_ZONE_OFFSET || "-03:00";
@@ -39,7 +43,14 @@ function getRecipientsByCircle(memberships) {
   }, new Map());
 }
 
-function buildNotification({ type, source, userId, dateKey, scheduledFor }) {
+function buildNotification({
+  type,
+  source,
+  userId,
+  dateKey,
+  occurrenceTime,
+  reminderMinutes,
+}) {
   const content = {
     MEDICATION: {
       title: "Momento de la medicación",
@@ -63,8 +74,14 @@ function buildNotification({ type, source, userId, dateKey, scheduledFor }) {
     userId,
     type,
     sourceId: source.id,
-    occurrenceKey: `${type}:${source.id}:${dateKey}`,
-    scheduledFor,
+    occurrenceKey: buildNotificationOccurrenceKey({
+      type,
+      sourceId: source.id,
+      dateKey,
+      time: type === "TASK" ? source.scheduledTime : source.schedule || source.time,
+      reminderMinutes,
+    }),
+    scheduledFor: getReminderScheduledFor(occurrenceTime, reminderMinutes),
     ...content,
   };
 }
@@ -88,6 +105,7 @@ export async function materializeUpcomingNotifications(now = new Date()) {
         name: true,
         dose: true,
         schedule: true,
+        reminderMinutes: true,
         administrations: {
           where: {
             scheduledFor: {
@@ -111,6 +129,7 @@ export async function materializeUpcomingNotifications(now = new Date()) {
         title: true,
         scheduledDate: true,
         scheduledTime: true,
+        reminderMinutes: true,
         assignedToId: true,
       },
     }),
@@ -122,6 +141,7 @@ export async function materializeUpcomingNotifications(now = new Date()) {
         title: true,
         date: true,
         time: true,
+        reminderMinutes: true,
       },
     }),
   ]);
@@ -131,8 +151,10 @@ export async function materializeUpcomingNotifications(now = new Date()) {
   const notifications = [];
 
   for (const medication of medications) {
+    if (medication.reminderMinutes === 0) continue;
+
     for (const dateKey of [todayKey, tomorrowKey]) {
-      const scheduledFor = getScheduledInstant(dateKey, medication.schedule);
+      const occurrenceTime = getScheduledInstant(dateKey, medication.schedule);
       const wasAdministered = medication.administrations.some(
         (administration) => getNotificationDateKey(administration.scheduledFor) === dateKey,
       );
@@ -146,7 +168,8 @@ export async function materializeUpcomingNotifications(now = new Date()) {
             source: medication,
             userId,
             dateKey,
-            scheduledFor,
+            occurrenceTime,
+            reminderMinutes: medication.reminderMinutes,
           }),
         );
       }
@@ -154,6 +177,8 @@ export async function materializeUpcomingNotifications(now = new Date()) {
   }
 
   for (const task of tasks) {
+    if (task.reminderMinutes === 0) continue;
+
     const dateKey = getStoredDateKey(task.scheduledDate);
     const recipients = task.assignedToId && eligibleUsers.has(task.assignedToId)
       ? [task.assignedToId]
@@ -166,13 +191,16 @@ export async function materializeUpcomingNotifications(now = new Date()) {
           source: task,
           userId,
           dateKey,
-          scheduledFor: getScheduledInstant(dateKey, task.scheduledTime),
+          occurrenceTime: getScheduledInstant(dateKey, task.scheduledTime),
+          reminderMinutes: task.reminderMinutes,
         }),
       );
     }
   }
 
   for (const event of events) {
+    if (event.reminderMinutes === 0) continue;
+
     const dateKey = getStoredDateKey(event.date);
     for (const userId of recipientsByCircle.get(event.careCircleId) || []) {
       notifications.push(
@@ -181,7 +209,8 @@ export async function materializeUpcomingNotifications(now = new Date()) {
           source: event,
           userId,
           dateKey,
-          scheduledFor: getScheduledInstant(dateKey, event.time),
+          occurrenceTime: getScheduledInstant(dateKey, event.time),
+          reminderMinutes: event.reminderMinutes,
         }),
       );
     }
@@ -198,14 +227,27 @@ export async function materializeUpcomingNotifications(now = new Date()) {
   return 0;
 }
 
-function configureWebPush() {
+export function validateNotificationEnvironment() {
+  const requiredVariables = [
+    "DATABASE_URL",
+    "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
+    "VAPID_PRIVATE_KEY",
+    "VAPID_SUBJECT",
+  ];
+  const missingVariables = requiredVariables.filter((name) => !process.env[name]);
+
+  if (missingVariables.length) {
+    throw new Error(
+      `Faltan variables requeridas para el worker: ${missingVariables.join(", ")}.`,
+    );
+  }
+}
+
+export function configureWebPush() {
+  validateNotificationEnvironment();
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT;
-
-  if (!publicKey || !privateKey || !subject) {
-    throw new Error("Faltan NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY o VAPID_SUBJECT.");
-  }
 
   webpush.setVapidDetails(subject, publicKey, privateKey);
 }

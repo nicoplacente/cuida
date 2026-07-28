@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 function urlBase64ToUint8Array(value) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
@@ -11,7 +12,6 @@ function urlBase64ToUint8Array(value) {
 
 export function PushPermissionControl({ publicKey }) {
   const [status, setStatus] = useState("loading");
-  const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -32,12 +32,11 @@ export function PushPermissionControl({ publicKey }) {
 
   async function enable() {
     if (!publicKey) {
-      setMessage("Las notificaciones todavía no están configuradas en el servidor.");
+      toast.error("Las notificaciones todavía no están disponibles.");
       return;
     }
 
     setStatus("loading");
-    setMessage("");
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
@@ -60,15 +59,15 @@ export function PushPermissionControl({ publicKey }) {
 
       if (!response.ok) throw new Error("No se pudo guardar la suscripción.");
       setStatus("enabled");
+      toast.success("Avisos activados en este dispositivo.");
     } catch {
       setStatus("idle");
-      setMessage("No pudimos activar los avisos en este dispositivo.");
+      toast.error("No pudimos activar los avisos en este dispositivo.");
     }
   }
 
   async function disable() {
     setStatus("loading");
-    setMessage("");
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
@@ -81,9 +80,10 @@ export function PushPermissionControl({ publicKey }) {
         await subscription.unsubscribe();
       }
       setStatus("idle");
+      toast.success("Avisos desactivados en este dispositivo.");
     } catch {
       setStatus("enabled");
-      setMessage("No pudimos desactivar los avisos en este dispositivo.");
+      toast.error("No pudimos desactivar los avisos en este dispositivo.");
     }
   }
 
@@ -91,7 +91,7 @@ export function PushPermissionControl({ publicKey }) {
     return (
       <p className="text-xs text-[color:var(--care-muted)]">
         Este navegador no admite notificaciones Push. En iPhone, instala Cuida en la
-        pantalla de inicio y ábrela desde allí.
+        pantalla de inicio y abrila desde allí.
       </p>
     );
   }
@@ -99,13 +99,13 @@ export function PushPermissionControl({ publicKey }) {
   if (status === "denied") {
     return (
       <p className="text-xs text-[color:var(--care-warning)]">
-        Los avisos están bloqueados. Puedes habilitarlos desde la configuración del navegador.
+        Los avisos están bloqueados. Podés habilitarlos desde la configuración del navegador.
       </p>
     );
   }
 
   return (
-    <div className="grid gap-2">
+    <div>
       <button
         type="button"
         disabled={status === "loading"}
@@ -118,7 +118,6 @@ export function PushPermissionControl({ publicKey }) {
             ? "Desactivar avisos en este dispositivo"
             : "Activar avisos en este dispositivo"}
       </button>
-      {message ? <p className="text-xs text-[color:var(--care-warning)]">{message}</p> : null}
     </div>
   );
 }

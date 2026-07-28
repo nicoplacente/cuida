@@ -6,9 +6,17 @@ import {
   deleteMedicationAction,
   toggleMedicationAction,
 } from "@/features/medications/actions";
-import { Badge, Card, EmptyState, Field, PrimaryButton, inputClassName } from "@/components/ui";
+import { Badge, Card, EmptyState, Field, inputClassName } from "@/components/ui";
+import {
+  SecondarySubmitButton,
+  SubmitButton,
+  ToastForm,
+} from "@/components/toast-form";
 import { PageHeader } from "@/components/page-header";
+import { ReminderField } from "@/components/reminder-field";
+import { MedicationEditButton } from "@/features/medications/medication-edit-button";
 import { getEndOfToday, getStartOfToday, formatTime } from "@/utils/dates";
+import { formatReminderLabel } from "@/utils/reminders";
 
 export default async function MedicationsPage() {
   const { careCircle } = await requireCareContext();
@@ -38,7 +46,7 @@ export default async function MedicationsPage() {
   return (
     <div>
       <PageHeader eyebrow="Medicación" title="Control claro para evitar errores.">
-        Registra cada administración una sola vez por horario. Si alguien ya la
+        Registrá cada administración una sola vez por horario. Si alguien ya la
         marcó, el resto del equipo lo ve inmediatamente al actualizar.
       </PageHeader>
 
@@ -63,6 +71,9 @@ export default async function MedicationsPage() {
                           <Badge tone={medication.active ? "teal" : "neutral"}>
                             {medication.active ? "Activo" : "Inactivo"}
                           </Badge>
+                          <Badge tone={medication.reminderMinutes ? "teal" : "neutral"}>
+                            {formatReminderLabel(medication.reminderMinutes)}
+                          </Badge>
                         </div>
                         <h3 className="mt-2 text-xl font-semibold">
                           {medication.name} {medication.dose}
@@ -78,41 +89,45 @@ export default async function MedicationsPage() {
                       </div>
 
                       <div className="grid gap-2">
+                        <MedicationEditButton
+                          medication={{
+                            id: medication.id,
+                            name: medication.name,
+                            dose: medication.dose,
+                            schedule: medication.schedule,
+                            reminderMinutes: medication.reminderMinutes,
+                            frequency: medication.frequency,
+                            instructions: medication.instructions,
+                          }}
+                        />
                         {administration ? (
                           <Badge tone="success">
                             Administrado por {administration.user.name} a las{" "}
                             {formatTime(administration.administeredAt)}
                           </Badge>
                         ) : medication.active ? (
-                          <form action={administerMedicationAction}>
+                          <ToastForm action={administerMedicationAction}>
                             <input type="hidden" name="medicationId" value={medication.id} />
-                            <input type="hidden" name="schedule" value={medication.schedule} />
-                            <PrimaryButton type="submit">Administrar</PrimaryButton>
-                          </form>
+                            <SubmitButton pendingLabel="Registrando…">Administrar</SubmitButton>
+                          </ToastForm>
                         ) : null}
-                        <form action={toggleMedicationAction}>
+                        <ToastForm action={toggleMedicationAction}>
                           <input type="hidden" name="medicationId" value={medication.id} />
                           <input
                             type="hidden"
                             name="active"
                             value={String(!medication.active)}
                           />
-                          <button
-                            type="submit"
-                            className="rounded-full border border-[color:var(--care-cloud)] bg-white px-4 py-2 text-sm font-semibold"
-                          >
+                          <SecondarySubmitButton pendingLabel="Actualizando…">
                             {medication.active ? "Desactivar" : "Activar"}
-                          </button>
-                        </form>
-                        <form action={deleteMedicationAction}>
+                          </SecondarySubmitButton>
+                        </ToastForm>
+                        <ToastForm action={deleteMedicationAction}>
                           <input type="hidden" name="medicationId" value={medication.id} />
-                          <button
-                            type="submit"
-                            className="rounded-full border border-[#f3c7c2] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--care-danger)]"
-                          >
+                          <SecondarySubmitButton pendingLabel="Eliminando…" tone="danger">
                             Eliminar
-                          </button>
-                        </form>
+                          </SecondarySubmitButton>
+                        </ToastForm>
                       </div>
                     </div>
                   </article>
@@ -126,7 +141,7 @@ export default async function MedicationsPage() {
 
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Agregar medicamento</h2>
-          <form action={createMedicationAction} className="grid gap-4">
+          <ToastForm action={createMedicationAction} className="grid gap-4">
             <Field label="Nombre">
               <input className={inputClassName} name="name" required />
             </Field>
@@ -136,6 +151,7 @@ export default async function MedicationsPage() {
             <Field label="Horario">
               <input className={inputClassName} type="time" name="schedule" required />
             </Field>
+            <ReminderField />
             <Field label="Frecuencia">
               <input
                 className={inputClassName}
@@ -147,8 +163,8 @@ export default async function MedicationsPage() {
             <Field label="Instrucciones">
               <textarea className={inputClassName} name="instructions" rows={4} />
             </Field>
-            <PrimaryButton type="submit">Guardar medicamento</PrimaryButton>
-          </form>
+            <SubmitButton pendingLabel="Guardando…">Guardar medicamento</SubmitButton>
+          </ToastForm>
         </Card>
       </div>
     </div>

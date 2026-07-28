@@ -2,11 +2,17 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { acceptInvitationAction } from "@/features/team/actions";
 import { prisma } from "@/services/db";
-import { Card, Field, PrimaryButton, inputClassName } from "@/components/ui";
+import { PasswordField } from "@/components/password-field";
+import { SubmitButton, ToastForm } from "@/components/toast-form";
+import { StatusToast } from "@/components/status-toast";
+import { Card, Field, inputClassName } from "@/components/ui";
 
-export default async function InvitationPage({ params, searchParams }) {
+export default async function InvitationPage({ params }) {
   const { token } = await params;
-  const query = await searchParams;
+  if (!/^[a-f0-9]{64}$/.test(token)) {
+    notFound();
+  }
+
   const invitation = await prisma.careInvitation.findUnique({
     where: { token },
     include: {
@@ -51,14 +57,16 @@ export default async function InvitationPage({ params, searchParams }) {
           </div>
         </div>
 
-        {query?.error ? (
-          <p className="mb-5 rounded-2xl bg-[#fff4de] p-4 text-sm font-semibold text-[color:var(--care-warning)]">
-            {query.error}
-          </p>
-        ) : null}
-
         {isAccepted || isExpired ? (
           <div className="rounded-2xl bg-[#fff4de] p-5">
+            <StatusToast
+              message={
+                isAccepted
+                  ? "Esta invitación ya fue utilizada."
+                  : "Esta invitación venció."
+              }
+              status="warning"
+            />
             <p className="font-semibold text-[color:var(--care-warning)]">
               {isAccepted
                 ? "Esta invitación ya fue utilizada."
@@ -75,7 +83,8 @@ export default async function InvitationPage({ params, searchParams }) {
           <>
             <div className="mb-6 rounded-2xl bg-[#f8fbfd] p-5">
               <p className="font-semibold text-[color:var(--care-ink)]">
-                Te invitaron como {invitation.role === "OBSERVER" ? "observador" : "cuidador"}.
+                Te invitaron como{" "}
+                {invitation.role === "OBSERVER" ? "observador" : "cuidador"}.
               </p>
               <p className="mt-2 text-sm text-[color:var(--care-muted)]">
                 Email: {invitation.email}
@@ -97,9 +106,9 @@ export default async function InvitationPage({ params, searchParams }) {
               ) : null}
             </div>
 
-            <form action={acceptInvitationAction} className="grid gap-4">
+            <ToastForm action={acceptInvitationAction} className="grid gap-4">
               <input type="hidden" name="token" value={token} />
-              <Field label="Tu nombre">
+              <Field label="Nombre completo">
                 <input
                   className={inputClassName}
                   name="name"
@@ -108,17 +117,27 @@ export default async function InvitationPage({ params, searchParams }) {
                   required={!existingUser}
                 />
               </Field>
-              <Field label={existingUser ? "Contraseña de tu cuenta" : "Crear contraseña"}>
-                <input
-                  className={inputClassName}
-                  type="password"
+              <Field
+                label={
+                  existingUser ? "Contraseña de tu cuenta" : "Crear contraseña"
+                }
+                htmlFor="invitation-password"
+              >
+                <PasswordField
+                  id="invitation-password"
                   name="password"
-                  minLength={8}
+                  autoComplete={
+                    existingUser ? "current-password" : "new-password"
+                  }
+                  minLength={existingUser ? undefined : 8}
+                  maxLength={128}
                   required
                 />
               </Field>
-              <PrimaryButton type="submit">Aceptar invitación</PrimaryButton>
-            </form>
+              <SubmitButton pendingLabel="Aceptando…">
+                Aceptar invitación
+              </SubmitButton>
+            </ToastForm>
           </>
         )}
       </Card>
