@@ -21,7 +21,10 @@ Aplicar la migración existente mediante `prisma migrate deploy`. Este comando:
 - no crea una migración nueva ni elimina datos.
 
 Después se regenerará Prisma Client para mantener sincronizados código, cliente
-y base de datos.
+y base de datos. Si Windows mantiene bloqueado el motor de Prisma porque
+`next dev` estaba abierto antes de la migración, se detendrá únicamente ese
+proceso del proyecto, se regenerará el cliente y se iniciará una instancia
+limpia para la comprobación.
 
 ## Verificación
 
