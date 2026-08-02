@@ -235,3 +235,25 @@ export function getR2UploadErrorMessage(error) {
 
   return "No pudimos guardar el archivo en el almacenamiento. Intentá nuevamente.";
 }
+
+export function getR2DeletionErrorMessage(error) {
+  if (error instanceof R2ConfigurationError) {
+    return "El almacenamiento de documentos no está configurado. Avisale al administrador.";
+  }
+
+  if (!(error instanceof R2RequestError)) return null;
+
+  if (
+    error.status === 401 ||
+    error.status === 403 ||
+    ["AccessDenied", "InvalidAccessKeyId", "SignatureDoesNotMatch"].includes(error.code)
+  ) {
+    return "El almacenamiento rechazó la eliminación. Avisale al administrador para revisar el acceso.";
+  }
+
+  if (["NetworkError", "RequestTimeout"].includes(error.code)) {
+    return "No pudimos conectar con el almacenamiento. Intentá nuevamente.";
+  }
+
+  return "No pudimos eliminar el archivo del almacenamiento. Intentá nuevamente.";
+}

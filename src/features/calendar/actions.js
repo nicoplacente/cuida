@@ -10,7 +10,7 @@ import { parseReminderMinutes } from "@/utils/reminders";
 
 export async function createEventAction(_previousState, formData) {
   try {
-    const { user, careCircle } = await requireCareContext();
+    const { user, careCircle, canManage } = await requireCareContext();
     const title = getFormField(formData, "title");
     const date = getFormField(formData, "date");
     const time = getFormField(formData, "time");
@@ -20,7 +20,7 @@ export async function createEventAction(_previousState, formData) {
       getFormField(formData, "reminderMinutes"),
     );
 
-    if (!careCircle || !title || !date || !time) {
+    if (!careCircle || !canManage || !title || !date || !time) {
       return actionError("Completá el título, la fecha y el horario del evento.");
     }
     if (!isValidTimeInput(time)) {
@@ -64,7 +64,7 @@ export async function createEventAction(_previousState, formData) {
 
 export async function updateEventAction(_previousState, formData) {
   try {
-    const { user, careCircle } = await requireCareContext();
+    const { user, careCircle, canManage } = await requireCareContext();
     const eventId = getFormField(formData, "eventId");
     const title = getFormField(formData, "title");
     const date = getFormField(formData, "date");
@@ -76,7 +76,7 @@ export async function updateEventAction(_previousState, formData) {
     );
     const eventDate = parseDateInput(date);
 
-    if (!careCircle || !eventId || !title || !date || !time) {
+    if (!careCircle || !canManage || !eventId || !title || !date || !time) {
       return actionError("Revisá los datos del evento.");
     }
     if (!eventDate) {
@@ -128,5 +128,80 @@ export async function updateEventAction(_previousState, formData) {
     return actionSuccess("Evento actualizado correctamente.");
   } catch (error) {
     return unexpectedActionError("updateEventAction", error);
+  }
+}
+
+export async function completeEventAction(_previousState, formData) {
+  try {
+    const { user, careCircle, canManage } = await requireCareContext();
+    const eventId = getFormField(formData, "eventId");
+    if (!careCircle || !canManage || !eventId) {
+      return actionError("No tenés permisos para completar este evento.");
+    }
+
+    const event = await prisma.calendarEvent.findFirst({
+      where: { id: eventId, careCircleId: careCircle.id, completed: false },
+      select: { title: true },
+    });
+    if (!event) return actionError("El evento ya fue realizado o no está disponible.");
+
+    await prisma.$transaction([
+      prisma.calendarEvent.update({
+        where: { id: eventId },
+        data: { completed: true, completedAt: new Date(), completedById: user.id },
+      }),
+      prisma.notification.deleteMany({
+        where: { type: "EVENT", sourceId: eventId, sentAt: null },
+      }),
+      prisma.activity.create({
+        data: {
+          careCircleId: careCircle.id,
+          userId: user.id,
+          type: "EVENT_COMPLETED",
+          message: `${user.name} marcó como realizado el evento ${event.title}.`,
+        },
+      }),
+    ]);
+
+    revalidatePath("/app");
+    revalidatePath("/app/calendario");
+    return actionSuccess("Evento marcado como realizado.");
+  } catch (error) {
+    return unexpectedActionError("completeEventAction", error);
+  }
+}
+
+export async function deleteEventAction(_previousState, formData) {
+  try {
+    const { user, careCircle, canManage } = await requireCareContext();
+    const eventId = getFormField(formData, "eventId");
+    if (!careCircle || !canManage || !eventId) {
+      return actionError("No tenés permisos para eliminar este evento.");
+    }
+
+    const event = await prisma.calendarEvent.findFirst({
+      where: { id: eventId, careCircleId: careCircle.id },
+      select: { title: true },
+    });
+    if (!event) return actionError("El evento no está disponible.");
+
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { type: "EVENT", sourceId: eventId } }),
+      prisma.calendarEvent.delete({ where: { id: eventId } }),
+      prisma.activity.create({
+        data: {
+          careCircleId: careCircle.id,
+          userId: user.id,
+          type: "EVENT_DELETED",
+          message: `${user.name} eliminó el evento ${event.title}.`,
+        },
+      }),
+    ]);
+
+    revalidatePath("/app");
+    revalidatePath("/app/calendario");
+    return actionSuccess("Evento eliminado.");
+  } catch (error) {
+    return unexpectedActionError("deleteEventAction", error);
   }
 }

@@ -7,6 +7,7 @@ import { prisma } from "@/services/db";
 import { requireCareContext } from "@/services/care-circle";
 import {
   deleteR2Object,
+  getR2DeletionErrorMessage,
   getR2UploadErrorMessage,
   uploadR2Object,
 } from "@/services/r2";
@@ -54,9 +55,9 @@ export async function uploadDocumentAction(_previousState, formData) {
   let wasUploaded = false;
 
   try {
-    const { user, careCircle } = await requireCareContext();
-    if (!careCircle) {
-      return actionError("No hay un círculo de cuidado activo.");
+    const { user, careCircle, canManage } = await requireCareContext();
+    if (!careCircle || !canManage) {
+      return actionError("No tenés permisos para subir documentos.");
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -105,5 +106,81 @@ export async function uploadDocumentAction(_previousState, formData) {
     }
 
     return unexpectedActionError("uploadDocumentAction", error);
+  }
+}
+
+export async function updateDocumentAction(_previousState, formData) {
+  try {
+    const { user, careCircle, canManage } = await requireCareContext();
+    const documentId = getFormField(formData, "documentId");
+    const title = getFormField(formData, "title");
+    const notes = getFormField(formData, "notes");
+    if (!careCircle || !canManage || !documentId || !title) {
+      return actionError("Revisá los datos del documento y tus permisos.");
+    }
+
+    const document = await prisma.document.findFirst({
+      where: { id: documentId, careCircleId: careCircle.id },
+      select: { id: true },
+    });
+    if (!document) return actionError("El documento no está disponible.");
+
+    await prisma.$transaction([
+      prisma.document.update({
+        where: { id: documentId },
+        data: { title, notes: notes || null },
+      }),
+      prisma.activity.create({
+        data: {
+          careCircleId: careCircle.id,
+          userId: user.id,
+          type: "DOCUMENT_UPDATED",
+          message: `${user.name} actualizó el documento ${title}.`,
+        },
+      }),
+    ]);
+
+    revalidatePath("/app");
+    revalidatePath("/app/documentos");
+    return actionSuccess("Documento actualizado correctamente.");
+  } catch (error) {
+    return unexpectedActionError("updateDocumentAction", error);
+  }
+}
+
+export async function deleteDocumentAction(_previousState, formData) {
+  try {
+    const { user, careCircle, canManage } = await requireCareContext();
+    const documentId = getFormField(formData, "documentId");
+    if (!careCircle || !canManage || !documentId) {
+      return actionError("No tenés permisos para eliminar este documento.");
+    }
+
+    const document = await prisma.document.findFirst({
+      where: { id: documentId, careCircleId: careCircle.id },
+      select: { filePath: true, title: true },
+    });
+    if (!document) return actionError("El documento no está disponible.");
+
+    await deleteR2Object(document.filePath);
+    await prisma.$transaction([
+      prisma.document.delete({ where: { id: documentId } }),
+      prisma.activity.create({
+        data: {
+          careCircleId: careCircle.id,
+          userId: user.id,
+          type: "DOCUMENT_DELETED",
+          message: `${user.name} eliminó el documento ${document.title}.`,
+        },
+      }),
+    ]);
+
+    revalidatePath("/app");
+    revalidatePath("/app/documentos");
+    return actionSuccess("Documento eliminado.");
+  } catch (error) {
+    const deletionErrorMessage = getR2DeletionErrorMessage(error);
+    if (deletionErrorMessage) return actionError(deletionErrorMessage);
+    return unexpectedActionError("deleteDocumentAction", error);
   }
 }

@@ -24,7 +24,7 @@ async function isValidAssignee(assignedToId, careCircleId) {
 
 export async function createTaskAction(_previousState, formData) {
   try {
-    const { user, careCircle } = await requireCareContext();
+    const { user, careCircle, canManage } = await requireCareContext();
     const title = getFormField(formData, "title");
     const description = getFormField(formData, "description");
     const scheduledTime = getFormField(formData, "scheduledTime");
@@ -35,7 +35,7 @@ export async function createTaskAction(_previousState, formData) {
     );
     const parsedScheduledDate = scheduledDate ? parseDateInput(scheduledDate) : null;
 
-    if (!careCircle || !title) {
+    if (!careCircle || !canManage || !title) {
       return actionError("Ingresá un título para la tarea.");
     }
     if (parsedReminderMinutes === null) {
@@ -85,7 +85,7 @@ export async function createTaskAction(_previousState, formData) {
 
 export async function updateTaskAction(_previousState, formData) {
   try {
-    const { user, careCircle } = await requireCareContext();
+    const { user, careCircle, canManage } = await requireCareContext();
     const taskId = getFormField(formData, "taskId");
     const title = getFormField(formData, "title");
     const description = getFormField(formData, "description");
@@ -97,7 +97,7 @@ export async function updateTaskAction(_previousState, formData) {
     );
     const parsedScheduledDate = scheduledDate ? parseDateInput(scheduledDate) : null;
 
-    if (!careCircle || !taskId || !title) {
+    if (!careCircle || !canManage || !taskId || !title) {
       return actionError("Revisá los datos de la tarea.");
     }
     if (parsedReminderMinutes === null) {
@@ -162,10 +162,10 @@ export async function updateTaskAction(_previousState, formData) {
 
 export async function completeTaskAction(_previousState, formData) {
   try {
-    const { user, careCircle } = await requireCareContext();
+    const { user, careCircle, canManage } = await requireCareContext();
     const taskId = getFormField(formData, "taskId");
 
-    if (!careCircle || !taskId) {
+    if (!careCircle || !canManage || !taskId) {
       return actionError("No pudimos identificar la tarea.");
     }
 
@@ -191,5 +191,40 @@ export async function completeTaskAction(_previousState, formData) {
     return actionSuccess("Tarea completada.");
   } catch (error) {
     return unexpectedActionError("completeTaskAction", error);
+  }
+}
+
+export async function deleteTaskAction(_previousState, formData) {
+  try {
+    const { user, careCircle, canManage } = await requireCareContext();
+    const taskId = getFormField(formData, "taskId");
+    if (!careCircle || !canManage || !taskId) {
+      return actionError("No tenés permisos para eliminar esta tarea.");
+    }
+
+    const task = await prisma.careTask.findFirst({
+      where: { id: taskId, careCircleId: careCircle.id },
+      select: { title: true },
+    });
+    if (!task) return actionError("La tarea no está disponible.");
+
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { type: "TASK", sourceId: taskId } }),
+      prisma.careTask.delete({ where: { id: taskId } }),
+      prisma.activity.create({
+        data: {
+          careCircleId: careCircle.id,
+          userId: user.id,
+          type: "TASK_DELETED",
+          message: `${user.name} eliminó la tarea ${task.title}.`,
+        },
+      }),
+    ]);
+
+    revalidatePath("/app");
+    revalidatePath("/app/tareas");
+    return actionSuccess("Tarea eliminada.");
+  } catch (error) {
+    return unexpectedActionError("deleteTaskAction", error);
   }
 }

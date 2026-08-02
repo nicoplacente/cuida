@@ -1,4 +1,8 @@
-import { createEventAction } from "@/features/calendar/actions";
+import {
+  completeEventAction,
+  createEventAction,
+  deleteEventAction,
+} from "@/features/calendar/actions";
 import { requireCareContext } from "@/services/care-circle";
 import { prisma } from "@/services/db";
 import { Badge, Card, EmptyState, Field, inputClassName } from "@/components/ui";
@@ -6,11 +10,12 @@ import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { PageHeader } from "@/components/page-header";
 import { ReminderField } from "@/components/reminder-field";
 import { EventEditButton } from "@/features/calendar/event-edit-button";
-import { formatShortDate } from "@/utils/dates";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
+import { formatShortDate, getScheduledDateForDay } from "@/utils/dates";
 import { formatReminderLabel } from "@/utils/reminders";
 
 export default async function CalendarPage() {
-  const { careCircle } = await requireCareContext();
+  const { careCircle, canManage } = await requireCareContext();
 
   if (!careCircle) {
     return <EmptyState title="No hay círculo activo." />;
@@ -18,7 +23,8 @@ export default async function CalendarPage() {
 
   const events = await prisma.calendarEvent.findMany({
     where: { careCircleId: careCircle.id },
-    orderBy: [{ date: "asc" }, { time: "asc" }],
+    include: { completedBy: { select: { name: true } } },
+    orderBy: [{ completed: "asc" }, { date: "asc" }, { time: "asc" }],
   });
 
   return (
@@ -28,12 +34,15 @@ export default async function CalendarPage() {
         equipo sepa qué viene.
       </PageHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className={`grid gap-6 ${canManage ? "xl:grid-cols-[1fr_360px]" : ""}`}>
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Próximos eventos</h2>
           <div className="grid gap-4">
             {events.length ? (
-              events.map((event) => (
+              events.map((event) => {
+                const isOverdue = !event.completed
+                  && getScheduledDateForDay(event.date, event.time) < new Date();
+                return (
                 <article
                   key={event.id}
                   className="rounded-2xl border border-[color:var(--care-cloud)] bg-[#f8fbfd] p-4"
@@ -45,6 +54,9 @@ export default async function CalendarPage() {
                       </Badge>
                       <Badge tone={event.reminderMinutes ? "teal" : "neutral"}>
                         {formatReminderLabel(event.reminderMinutes)}
+                      </Badge>
+                      <Badge tone={event.completed ? "success" : isOverdue ? "warning" : "neutral"}>
+                        {event.completed ? "Realizado" : isOverdue ? "Vencido" : "Pendiente"}
                       </Badge>
                       <h3 className="mt-3 text-xl font-semibold">{event.title}</h3>
                       {event.location ? (
@@ -58,6 +70,8 @@ export default async function CalendarPage() {
                         </p>
                       ) : null}
                     </div>
+                    {canManage ? (
+                    <div className="grid justify-items-end gap-2">
                     <EventEditButton
                       event={{
                         id: event.id,
@@ -69,15 +83,35 @@ export default async function CalendarPage() {
                         notes: event.notes,
                       }}
                     />
+                    {event.completed ? (
+                      <p className="text-sm text-[color:var(--care-muted)]">
+                        Realizado por {event.completedBy?.name || "el equipo"}
+                      </p>
+                    ) : (
+                      <ToastForm action={completeEventAction}>
+                        <input name="eventId" type="hidden" value={event.id} />
+                        <SubmitButton pendingLabel="Registrando…">Marcar como realizado</SubmitButton>
+                      </ToastForm>
+                    )}
+                    <ConfirmDeleteButton
+                      action={deleteEventAction}
+                      description={`Se eliminará el evento ${event.title} y sus avisos asociados.`}
+                      fields={{ eventId: event.id }}
+                      title={`Eliminar ${event.title}`}
+                    />
+                    </div>
+                    ) : null}
                   </div>
                 </article>
-              ))
+                );
+              })
             ) : (
               <EmptyState title="No hay eventos cargados." />
             )}
           </div>
         </Card>
 
+        {canManage ? (
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Nuevo evento</h2>
           <ToastForm action={createEventAction} className="grid gap-4">
@@ -100,6 +134,7 @@ export default async function CalendarPage() {
             <SubmitButton pendingLabel="Creando…">Crear evento</SubmitButton>
           </ToastForm>
         </Card>
+        ) : null}
       </div>
     </div>
   );

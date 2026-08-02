@@ -35,10 +35,11 @@ la base antes de entregar información del usuario. El refresh token se valida
 contra su hash y se rota desde un Route Handler, donde Next.js permite modificar
 cookies.
 
-El modelo conserva temporalmente el hash del token anterior y su vencimiento.
-Esa tolerancia dura 30 segundos para absorber renovaciones simultáneas de varias
-pestañas. Fuera de esa ventana, reutilizar un token anterior invalida la
-renovación.
+El modelo conserva temporalmente la versión anterior y su vencimiento. El
+secreto aleatorio permanece almacenado únicamente como hash, mientras que cada
+versión produce una credencial firmada diferente. Esa tolerancia dura 30
+segundos para absorber renovaciones simultáneas de varias pestañas. Fuera de esa
+ventana, reutilizar una versión anterior invalida la renovación.
 
 No se incorporan librerías de autenticación o JWT. Las firmas, comparaciones y
 tokens usan el módulo `crypto` de Node.js y las primitivas ya presentes.

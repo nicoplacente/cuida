@@ -11,7 +11,13 @@ const focusableSelector = [
   "a[href]",
 ].join(",");
 
-export function EditModal({ eyebrow, title, children }) {
+export function EditModal({
+  eyebrow,
+  title,
+  children,
+  triggerLabel = "Editar",
+  triggerTone = "neutral",
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const titleId = useId();
   const dialogRef = useRef(null);
@@ -65,12 +71,16 @@ export function EditModal({ eyebrow, title, children }) {
   return (
     <>
       <button
-        className="rounded-full border border-[color:var(--care-cloud)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--care-ink)] transition hover:border-[color:var(--care-teal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        className={`rounded-full border bg-white px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+          triggerTone === "danger"
+            ? "border-[#f3c7c2] text-[color:var(--care-danger)] hover:border-[color:var(--care-danger)]"
+            : "border-[color:var(--care-cloud)] text-[color:var(--care-ink)] hover:border-[color:var(--care-teal)]"
+        }`}
         onClick={() => setIsOpen(true)}
         ref={triggerRef}
         type="button"
       >
-        Editar
+        {triggerLabel}
       </button>
 
       {isOpen ? (
@@ -100,7 +110,7 @@ export function EditModal({ eyebrow, title, children }) {
                 </h2>
               </div>
               <button
-                aria-label="Cerrar edición"
+                aria-label="Cerrar modal"
                 className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--care-cloud)] text-[color:var(--care-ink-soft)] transition hover:border-[color:var(--care-teal)] hover:text-[color:var(--care-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                 onClick={close}
                 ref={closeButtonRef}

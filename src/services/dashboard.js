@@ -1,5 +1,6 @@
 import { prisma } from "@/services/db";
 import { getEndOfToday, getStartOfToday } from "@/utils/dates";
+import { getMedicationOccurrences } from "@/utils/medication-schedules";
 
 export async function getDashboardData(careCircleId) {
   const todayStart = getStartOfToday();
@@ -7,7 +8,6 @@ export async function getDashboardData(careCircleId) {
 
   const [
     medications,
-    administeredToday,
     tasks,
     events,
     logs,
@@ -18,6 +18,7 @@ export async function getDashboardData(careCircleId) {
       where: { careCircleId, active: true },
       orderBy: { schedule: "asc" },
       include: {
+        times: { orderBy: { time: "asc" } },
         administrations: {
           where: {
             scheduledFor: {
@@ -30,15 +31,6 @@ export async function getDashboardData(careCircleId) {
               select: { name: true },
             },
           },
-        },
-      },
-    }),
-    prisma.medicationAdministration.count({
-      where: {
-        medication: { careCircleId },
-        scheduledFor: {
-          gte: todayStart,
-          lte: todayEnd,
         },
       },
     }),
@@ -86,10 +78,24 @@ export async function getDashboardData(careCircleId) {
     }),
   ]);
 
+  const medicationPlan = medications.flatMap((medication) => {
+    const administrations = new Map(
+      medication.administrations.map((administration) => [
+        administration.scheduledFor.getTime(),
+        administration,
+      ]),
+    );
+    return getMedicationOccurrences(medication, todayStart, todayEnd).map((occurrence) => ({
+      medication,
+      occurrence,
+      administration: administrations.get(occurrence.scheduledFor.getTime()) || null,
+    }));
+  });
+
   return {
     medications,
-    administeredToday,
-    pendingMedications: Math.max(medications.length - administeredToday, 0),
+    medicationPlan,
+    pendingMedications: medicationPlan.filter(({ administration }) => !administration).length,
     tasks,
     pendingTasks: tasks.filter((task) => !task.completed).length,
     events,

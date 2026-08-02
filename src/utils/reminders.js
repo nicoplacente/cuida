@@ -35,10 +35,11 @@ export function getReminderScheduledFor(occurrence, reminderMinutes) {
 
 export function buildNotificationOccurrenceKey({
   type,
+  kind = "REMINDER",
   sourceId,
   dateKey,
   time,
   reminderMinutes,
 }) {
-  return `${type}:${sourceId}:${dateKey}:${time}:${reminderMinutes}`;
+  return `${type}:${kind}:${sourceId}:${dateKey}:${time}:${reminderMinutes}`;
 }

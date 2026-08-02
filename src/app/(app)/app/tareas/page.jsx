@@ -1,16 +1,21 @@
-import { createTaskAction, completeTaskAction } from "@/features/tasks/actions";
+import {
+  completeTaskAction,
+  createTaskAction,
+  deleteTaskAction,
+} from "@/features/tasks/actions";
 import { requireCareContext, getCareCircleMembers } from "@/services/care-circle";
 import { prisma } from "@/services/db";
 import { Badge, Card, EmptyState, Field, inputClassName } from "@/components/ui";
 import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { PageHeader } from "@/components/page-header";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { ReminderField } from "@/components/reminder-field";
 import { TaskEditButton } from "@/features/tasks/task-edit-button";
-import { formatShortDate } from "@/utils/dates";
+import { formatShortDate, getScheduledDateForDay } from "@/utils/dates";
 import { formatReminderLabel } from "@/utils/reminders";
 
 export default async function TasksPage() {
-  const { careCircle } = await requireCareContext();
+  const { careCircle, canManage } = await requireCareContext();
 
   if (!careCircle) {
     return <EmptyState title="No hay círculo activo." />;
@@ -35,12 +40,16 @@ export default async function TasksPage() {
         quién completó cada cuidado.
       </PageHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className={`grid gap-6 ${canManage ? "xl:grid-cols-[1fr_360px]" : ""}`}>
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Tareas del círculo</h2>
           <div className="grid gap-4">
             {tasks.length ? (
-              tasks.map((task) => (
+              tasks.map((task) => {
+                const isOverdue = !task.completed && task.scheduledDate && task.scheduledTime
+                  ? getScheduledDateForDay(task.scheduledDate, task.scheduledTime) < new Date()
+                  : false;
+                return (
                 <article
                   key={task.id}
                   className="rounded-2xl border border-[color:var(--care-cloud)] bg-[#f8fbfd] p-4"
@@ -63,7 +72,13 @@ export default async function TasksPage() {
                       <Badge tone={task.reminderMinutes ? "teal" : "neutral"}>
                         {formatReminderLabel(task.reminderMinutes)}
                       </Badge>
+                      <div className="mt-2">
+                        <Badge tone={task.completed ? "success" : isOverdue ? "warning" : "neutral"}>
+                          {task.completed ? "Realizada" : isOverdue ? "Vencida" : "Pendiente"}
+                        </Badge>
+                      </div>
                     </div>
+                    {canManage ? (
                     <div className="grid justify-items-end gap-2">
                       <TaskEditButton
                         members={members.map((member) => ({
@@ -92,16 +107,25 @@ export default async function TasksPage() {
                           <SubmitButton pendingLabel="Completando…">Completar</SubmitButton>
                         </ToastForm>
                       )}
+                      <ConfirmDeleteButton
+                        action={deleteTaskAction}
+                        description={`Se eliminará la tarea ${task.title} y sus avisos asociados.`}
+                        fields={{ taskId: task.id }}
+                        title={`Eliminar ${task.title}`}
+                      />
                     </div>
+                    ) : null}
                   </div>
                 </article>
-              ))
+                );
+              })
             ) : (
               <EmptyState title="No hay tareas cargadas." />
             )}
           </div>
         </Card>
 
+        {canManage ? (
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Nueva tarea</h2>
           <ToastForm action={createTaskAction} className="grid gap-4">
@@ -131,6 +155,7 @@ export default async function TasksPage() {
             <SubmitButton pendingLabel="Creando…">Crear tarea</SubmitButton>
           </ToastForm>
         </Card>
+        ) : null}
       </div>
     </div>
   );

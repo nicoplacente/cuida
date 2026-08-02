@@ -4,9 +4,11 @@ import { getDashboardData } from "@/services/dashboard";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { formatTime } from "@/utils/dates";
+import { getPatientAge } from "@/utils/patients";
+import { PatientEditButton } from "@/features/care-circles/patient-edit-button";
 
 export default async function DashboardPage() {
-  const { user, careCircle, patient } = await requireCareContext();
+  const { user, careCircle, patient, canManage } = await requireCareContext();
 
   if (!careCircle || !patient) {
     return (
@@ -19,6 +21,7 @@ export default async function DashboardPage() {
   }
 
   const data = await getDashboardData(careCircle.id);
+  const patientAge = getPatientAge(patient);
 
   return (
     <div>
@@ -39,28 +42,44 @@ export default async function DashboardPage() {
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <div className="grid gap-6">
           <Card className="p-6">
-            <div className="grid gap-5 sm:grid-cols-[120px_1fr]">
-              <div className="relative aspect-square overflow-hidden rounded-3xl bg-[color:var(--care-teal-soft)]">
+            <div className="grid gap-5 lg:grid-cols-[120px_1fr]">
+              <div className="relative hidden aspect-square overflow-hidden rounded-3xl lg:block">
                 <Image
-                  src={patient.photo || "/cuida-full.png"}
-                  alt={`Foto de ${patient.name}`}
-                  fill
-                  className="object-cover"
+                  src="/cuida-full.png"
+                  alt="Logo de Cuida"
+                  width={120}
+                  height={120}
+                  className="h-full w-full object-contain p-3"
                   sizes="120px"
                 />
               </div>
               <div>
                 <Badge tone="teal">Paciente asociado</Badge>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em]">
-                  {patient.name}, {patient.age} años
+                  <span className="lg:hidden">{patient.name}</span>
+                  <span className="hidden lg:inline">
+                    {patient.name}, {patientAge} años
+                  </span>
                 </h2>
                 <p className="mt-2 font-semibold text-(--care-ink-soft)">
                   {patient.medicalCondition || "Sin condición médica cargada"}
                 </p>
                 {patient.importantNotes ? (
-                  <p className="mt-4 rounded-2xl bg-[#f8fbfd] p-4 text-sm text-(--care-ink-soft)">
+                  <p className="mt-4 hidden rounded-2xl bg-[#f8fbfd] p-4 text-sm text-(--care-ink-soft) lg:block">
                     {patient.importantNotes}
                   </p>
+                ) : null}
+                {canManage ? (
+                  <div className="mt-4">
+                    <PatientEditButton
+                      patient={{
+                        name: patient.name,
+                        birthDate: patient.birthDate?.toISOString().slice(0, 10) || "",
+                        medicalCondition: patient.medicalCondition,
+                        importantNotes: patient.importantNotes,
+                      }}
+                    />
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -97,17 +116,16 @@ export default async function DashboardPage() {
               <Badge>{new Date().toLocaleDateString("es-AR")}</Badge>
             </div>
             <div className="grid gap-3">
-              {data.medications.map((medication) => {
-                const administration = medication.administrations[0];
+              {data.medicationPlan.map(({ medication, occurrence, administration }) => {
                 return (
                   <div
-                    key={medication.id}
+                    key={`${medication.id}-${occurrence.scheduledFor.toISOString()}`}
                     className="rounded-2xl border border-(--care-cloud) bg-[#f8fbfd] p-4"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-(--care-muted)">
-                          {medication.schedule}
+                          {occurrence.time}
                         </p>
                         <p className="text-lg font-semibold">
                           {medication.name} {medication.dose}
@@ -124,6 +142,9 @@ export default async function DashboardPage() {
                   </div>
                 );
               })}
+              {!data.medicationPlan.length ? (
+                <EmptyState title="No hay tomas programadas para hoy." />
+              ) : null}
             </div>
           </Card>
 

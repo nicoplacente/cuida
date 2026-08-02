@@ -35,6 +35,13 @@ Copy-Item .env.example .env
 postgresql://postgres:postgres@localhost:5432/cuida?schema=public
 ```
 
+Para firmar access tokens y refresh tokens, configurá un secreto aleatorio y
+exclusivo de al menos 32 caracteres:
+
+```txt
+SESSION_SECRET="reemplaza-por-un-secreto-aleatorio-de-al-menos-32-caracteres"
+```
+
 Para que los enlaces de invitación sean absolutos, configurá:
 
 ```bash

@@ -1,13 +1,15 @@
-import { uploadDocumentAction } from "@/features/documents/actions";
+import { deleteDocumentAction, uploadDocumentAction } from "@/features/documents/actions";
 import { requireCareContext } from "@/services/care-circle";
 import { prisma } from "@/services/db";
 import { Badge, Card, EmptyState, Field, inputClassName } from "@/components/ui";
 import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { PageHeader } from "@/components/page-header";
 import { formatShortDate } from "@/utils/dates";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
+import { DocumentEditButton } from "@/features/documents/document-edit-button";
 
 export default async function DocumentsPage() {
-  const { careCircle } = await requireCareContext();
+  const { careCircle, canManage } = await requireCareContext();
 
   if (!careCircle) {
     return <EmptyState title="No hay círculo activo." />;
@@ -28,7 +30,7 @@ export default async function DocumentsPage() {
         pueda acceder a ellos.
       </PageHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className={`grid gap-6 ${canManage ? "xl:grid-cols-[1fr_360px]" : ""}`}>
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Biblioteca</h2>
           <div className="grid gap-4">
@@ -51,6 +53,7 @@ export default async function DocumentsPage() {
                         </p>
                       ) : null}
                     </div>
+                    <div className="flex flex-wrap gap-2">
                     <a
                       href={`/app/documentos/${document.id}/archivo`}
                       target="_blank"
@@ -59,6 +62,24 @@ export default async function DocumentsPage() {
                     >
                       Abrir
                     </a>
+                    {canManage ? (
+                      <>
+                        <DocumentEditButton
+                          document={{
+                            id: document.id,
+                            title: document.title,
+                            notes: document.notes,
+                          }}
+                        />
+                        <ConfirmDeleteButton
+                          action={deleteDocumentAction}
+                          description={`Se eliminarán ${document.title} y su archivo protegido. Esta acción no se puede deshacer.`}
+                          fields={{ documentId: document.id }}
+                          title={`Eliminar ${document.title}`}
+                        />
+                      </>
+                    ) : null}
+                    </div>
                   </div>
                 </article>
               ))
@@ -68,6 +89,7 @@ export default async function DocumentsPage() {
           </div>
         </Card>
 
+        {canManage ? (
         <Card className="p-6">
           <h2 className="mb-5 text-xl font-semibold">Subir documento</h2>
           <ToastForm
@@ -99,6 +121,7 @@ export default async function DocumentsPage() {
             <SubmitButton pendingLabel="Subiendo…">Subir documento</SubmitButton>
           </ToastForm>
         </Card>
+        ) : null}
       </div>
     </div>
   );

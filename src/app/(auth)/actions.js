@@ -7,7 +7,7 @@ import { createSession, destroySession } from "@/services/auth";
 import { createActivity } from "@/services/activity";
 import { getAppUrl } from "@/utils/app-url";
 import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
-import { getFormField, isValidEmail } from "@/utils/form-data";
+import { getCheckboxField, getFormField, isValidEmail } from "@/utils/form-data";
 import {
   hashPassword,
   isValidNewPassword,
@@ -105,6 +105,7 @@ export async function registerAction(_previousState, formData) {
 export async function loginAction(_previousState, formData) {
   const email = getFormField(formData, "email").toLowerCase();
   const password = getFormField(formData, "password");
+  const persistent = getCheckboxField(formData, "rememberSession");
 
   if (!isValidEmail(email) || !password || password.length > maximumPasswordLength) {
     return actionError("Ingresá un email y una contraseña válidos.");
@@ -119,7 +120,7 @@ export async function loginAction(_previousState, formData) {
       return actionError("Email o contraseña incorrectos.");
     }
 
-    await createSession(user.id);
+    await createSession(user.id, null, { persistent });
   } catch (error) {
     return unexpectedActionError("loginAction", error);
   }

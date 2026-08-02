@@ -8,6 +8,7 @@ import { NotificationCenter } from "@/components/notification-center";
 import { LogoutIcon } from "@/components/icons/logout-icon";
 import { MenuIcon } from "@/components/icons/menu-icon";
 import { ToastForm } from "@/components/toast-form";
+import { SessionKeeper } from "@/components/session-keeper";
 import { prisma } from "@/services/db";
 
 const navigation = [
@@ -28,13 +29,12 @@ export async function AppShell({ children }) {
     name: membership.careCircle.name,
   }));
   const now = new Date();
-  const notificationLimit = new Date(now.getTime() + 48 * 60 * 60 * 1000);
   const [notifications, unreadCount] = await Promise.all([
     prisma.notification.findMany({
       where: {
         userId: user.id,
         ...(careCircle ? { careCircleId: careCircle.id } : {}),
-        scheduledFor: { lte: notificationLimit },
+        scheduledFor: { lte: now },
       },
       orderBy: [{ readAt: "asc" }, { scheduledFor: "desc" }],
       take: 12,
@@ -51,6 +51,7 @@ export async function AppShell({ children }) {
 
   return (
     <div className="min-h-screen bg-[color:var(--care-canvas)]">
+      <SessionKeeper />
       <header className="sticky top-0 z-20 border-b border-[color:var(--care-cloud)] bg-white/90 backdrop-blur">
         <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <a href="/app" className="flex items-center gap-3">

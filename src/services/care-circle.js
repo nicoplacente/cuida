@@ -2,22 +2,25 @@ import { prisma } from "@/services/db";
 import {
   requireUser,
   getActiveCareCircleId,
-  getPrimaryCareCircle,
+  getPrimaryCareMembership,
 } from "@/services/auth";
 
 export async function requireCareContext() {
   const user = await requireUser();
   const activeCareCircleId = await getActiveCareCircleId();
-  const careCircle = getPrimaryCareCircle(user, activeCareCircleId);
+  const membership = getPrimaryCareMembership(user, activeCareCircleId);
+  const careCircle = membership?.careCircle || null;
 
   if (!careCircle) {
-    return { user, careCircle: null, patient: null };
+    return { user, careCircle: null, patient: null, membership: null, canManage: false };
   }
 
   return {
     user,
     careCircle,
     patient: careCircle.patient,
+    membership,
+    canManage: membership.role === "ADMIN" || membership.role === "CAREGIVER",
   };
 }
 

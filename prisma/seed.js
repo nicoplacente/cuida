@@ -41,7 +41,8 @@ async function main() {
       patient: {
         create: {
           name: "María",
-          age: 82,
+          age: 83,
+          birthDate: new Date("1943-05-14T12:00:00Z"),
           photo: "/cuida-full.png",
           medicalCondition: "Alzheimer etapa inicial",
           importantNotes:
@@ -95,6 +96,15 @@ async function main() {
         frequency: "Noche",
         instructions: "Solo si tiene dificultad para dormir.",
       },
+    ],
+    skipDuplicates: true,
+  });
+
+  await prisma.medicationSchedule.createMany({
+    data: [
+      { medicationId: "demo-med-donepezilo", time: "08:00" },
+      { medicationId: "demo-med-vitamina-d", time: "12:00" },
+      { medicationId: "demo-med-melatonina", time: "21:30" },
     ],
     skipDuplicates: true,
   });

@@ -225,6 +225,29 @@ export default function Home() {
           </Shell>
         </section>
       ) : null}
+
+      <section className="border-t border-[color:var(--care-cloud)] py-20">
+        <Shell>
+          <Card className="grid gap-8 p-8 lg:grid-cols-[1fr_auto] lg:items-center lg:p-10">
+            <SectionTitle
+              eyebrow="Mejoramos juntos"
+              title="¿Encontraste un error en Cuida?"
+            >
+              Contanos qué pasó en GitHub. Tu reporte nos ayuda a corregir
+              problemas y a mejorar la experiencia para toda la comunidad.
+            </SectionTitle>
+            <LinkButton
+              href="https://github.com/nicoplacente/cuida/issues/new"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Reportar un error en GitHub (se abre en una pestaña nueva)"
+              className="w-full sm:w-fit"
+            >
+              Reportar un error
+            </LinkButton>
+          </Card>
+        </Shell>
+      </section>
     </main>
   );
 }

@@ -4,7 +4,10 @@ import { PasswordField } from "@/components/password-field";
 import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { Card, Field, LinkButton, inputClassName } from "@/components/ui";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }) {
+  const reason = (await searchParams)?.reason;
+  const sessionExpired = reason === "session-expired";
+
   return (
     <main className="grid min-h-screen place-items-center bg-[color:var(--care-canvas)] px-4 py-10">
       <Card className="w-full max-w-md p-6 sm:p-8">
@@ -27,6 +30,15 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {sessionExpired ? (
+          <p
+            className="mb-4 rounded-xl bg-[#fff4de] px-4 py-3 text-sm font-medium text-[color:var(--care-warning)]"
+            role="status"
+          >
+            Tu sesión venció. Volvé a ingresar.
+          </p>
+        ) : null}
+
         <ToastForm action={loginAction} className="grid gap-4">
           <Field label="Email">
             <input
@@ -46,6 +58,21 @@ export default function LoginPage() {
               required
             />
           </Field>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--care-cloud)] bg-[color:var(--care-canvas)] px-4 py-3 transition hover:border-[color:var(--care-teal)]">
+            <input
+              className="mt-0.5 size-5 shrink-0 accent-[color:var(--care-teal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--care-teal)]"
+              name="rememberSession"
+              type="checkbox"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-[color:var(--care-ink)]">
+                Mantener mi sesión iniciada durante 90 días
+              </span>
+              <span className="mt-1 block text-xs font-normal text-[color:var(--care-muted)]">
+                Usalo solo en un dispositivo personal.
+              </span>
+            </span>
+          </label>
           <SubmitButton pendingLabel="Ingresando…" className="mt-2 w-full">
             Ingresar
           </SubmitButton>

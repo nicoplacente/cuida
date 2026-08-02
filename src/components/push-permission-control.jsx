@@ -10,11 +10,50 @@ function urlBase64ToUint8Array(value) {
   return Uint8Array.from(bytes, (character) => character.charCodeAt(0));
 }
 
+function haveSameApplicationServerKey(subscription, applicationServerKey) {
+  const currentKey = subscription.options.applicationServerKey;
+  if (!currentKey) return false;
+
+  const currentBytes = new Uint8Array(currentKey);
+  return (
+    currentBytes.length === applicationServerKey.length &&
+    currentBytes.every((byte, index) => byte === applicationServerKey[index])
+  );
+}
+
+async function getServiceWorkerRegistration() {
+  return (
+    (await navigator.serviceWorker.getRegistration()) ||
+    (await navigator.serviceWorker.register("/sw.js"))
+  );
+}
+
+async function removeSubscription(subscription) {
+  const response = await fetch("/api/push/subscriptions", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint: subscription.endpoint }),
+  });
+
+  if (!response.ok) {
+    throw new Error("No se pudo eliminar la suscripción.");
+  }
+
+  const unsubscribed = await subscription.unsubscribe();
+  if (!unsubscribed) {
+    throw new Error("No se pudo desactivar la suscripción.");
+  }
+}
+
 export function PushPermissionControl({ publicKey }) {
   const [status, setStatus] = useState("loading");
 
   useEffect(() => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    if (
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window) ||
+      !("Notification" in window)
+    ) {
       setStatus("unsupported");
       return;
     }
@@ -24,11 +63,30 @@ export function PushPermissionControl({ publicKey }) {
       return;
     }
 
-    navigator.serviceWorker.ready
+    let isMounted = true;
+
+    getServiceWorkerRegistration()
       .then((registration) => registration.pushManager.getSubscription())
-      .then((subscription) => setStatus(subscription ? "enabled" : "idle"))
-      .catch(() => setStatus("unsupported"));
-  }, []);
+      .then((subscription) => {
+        if (!isMounted) return;
+
+        const hasCurrentSubscription =
+          subscription &&
+          (!publicKey ||
+            haveSameApplicationServerKey(
+              subscription,
+              urlBase64ToUint8Array(publicKey),
+            ));
+        setStatus(hasCurrentSubscription ? "enabled" : "idle");
+      })
+      .catch(() => {
+        if (isMounted) setStatus("unsupported");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [publicKey]);
 
   async function enable() {
     if (!publicKey) {
@@ -44,12 +102,23 @@ export function PushPermissionControl({ publicKey }) {
         return;
       }
 
-      const registration = await navigator.serviceWorker.ready;
-      const subscription =
-        (await registration.pushManager.getSubscription()) ||
+      const registration = await getServiceWorkerRegistration();
+      const applicationServerKey = urlBase64ToUint8Array(publicKey);
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (
+        subscription &&
+        !haveSameApplicationServerKey(subscription, applicationServerKey)
+      ) {
+        await removeSubscription(subscription);
+        subscription = null;
+      }
+
+      subscription =
+        subscription ||
         (await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
+          applicationServerKey,
         }));
       const response = await fetch("/api/push/subscriptions", {
         method: "POST",
@@ -69,15 +138,10 @@ export function PushPermissionControl({ publicKey }) {
   async function disable() {
     setStatus("loading");
     try {
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await getServiceWorkerRegistration();
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
-        await fetch("/api/push/subscriptions", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: subscription.endpoint }),
-        });
-        await subscription.unsubscribe();
+        await removeSubscription(subscription);
       }
       setStatus("idle");
       toast.success("Avisos desactivados en este dispositivo.");
@@ -105,7 +169,7 @@ export function PushPermissionControl({ publicKey }) {
   }
 
   return (
-    <div>
+    <div className="grid gap-2">
       <button
         type="button"
         disabled={status === "loading"}
@@ -118,6 +182,12 @@ export function PushPermissionControl({ publicKey }) {
             ? "Desactivar avisos en este dispositivo"
             : "Activar avisos en este dispositivo"}
       </button>
+      {status === "enabled" ? (
+        <p className="text-xs text-[color:var(--care-muted)]">
+          Los avisos solicitarán sonido y vibración. El volumen y el modo
+          Concentración dependen de tu dispositivo.
+        </p>
+      ) : null}
     </div>
   );
 }

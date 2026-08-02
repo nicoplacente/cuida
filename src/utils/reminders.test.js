@@ -59,7 +59,7 @@ test("la clave de ocurrencia cambia con el horario o la anticipación", () => {
     reminderMinutes: 15,
   });
 
-  assert.equal(original, "EVENT:event-1:2026-07-27:20:00:15");
+  assert.equal(original, "EVENT:REMINDER:event-1:2026-07-27:20:00:15");
   assert.notEqual(
     original,
     buildNotificationOccurrenceKey({
