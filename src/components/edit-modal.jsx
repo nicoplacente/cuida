@@ -15,6 +15,7 @@ export function EditModal({
   eyebrow,
   title,
   children,
+  triggerClassName = "",
   triggerLabel = "Editar",
   triggerTone = "neutral",
 }) {
@@ -71,11 +72,13 @@ export function EditModal({
   return (
     <>
       <button
-        className={`rounded-full border bg-white px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+        className={`rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
           triggerTone === "danger"
-            ? "border-[#f3c7c2] text-[color:var(--care-danger)] hover:border-[color:var(--care-danger)]"
-            : "border-[color:var(--care-cloud)] text-[color:var(--care-ink)] hover:border-[color:var(--care-teal)]"
-        }`}
+            ? "border-[#f3c7c2] bg-white text-[color:var(--care-danger)] hover:border-[color:var(--care-danger)]"
+            : triggerTone === "primary"
+              ? "border-transparent bg-[color:var(--care-teal)] text-[color:var(--care-ink)] hover:brightness-95"
+              : "border-[color:var(--care-cloud)] bg-white text-[color:var(--care-ink)] hover:border-[color:var(--care-teal)]"
+        } ${triggerClassName}`}
         onClick={() => setIsOpen(true)}
         ref={triggerRef}
         type="button"

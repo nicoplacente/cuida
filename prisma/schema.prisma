@@ -42,6 +42,9 @@ enum ActivityType {
   DOCUMENT_UPLOADED
   DOCUMENT_UPDATED
   DOCUMENT_DELETED
+  DOCUMENT_FOLDER_CREATED
+  DOCUMENT_FOLDER_UPDATED
+  DOCUMENT_FOLDER_DELETED
   PATIENT_UPDATED
   CARE_CIRCLE_CREATED
   MEMBER_INVITED
@@ -125,6 +128,7 @@ model CareCircle {
   events        CalendarEvent[]
   logs          DailyLog[]
   documents     Document[]
+  documentFolders DocumentFolder[]
   activities    Activity[]
   notifications Notification[]
   invitations   CareInvitation[]
@@ -272,6 +276,7 @@ model Document {
   id           String     @id @default(cuid())
   careCircleId String
   uploadedById String
+  folderId     String?
   title        String
   fileName     String
   filePath     String
@@ -281,6 +286,28 @@ model Document {
   createdAt    DateTime   @default(now())
   careCircle   CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
   uploadedBy   User       @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  folder       DocumentFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@index([careCircleId, folderId])
+}
+
+model DocumentFolder {
+  id           String           @id @default(cuid())
+  careCircleId String
+  parentId     String?
+  name         String
+  locationKey  String
+  systemKey    String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  careCircle   CareCircle       @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  parent       DocumentFolder?  @relation("DocumentFolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children     DocumentFolder[] @relation("DocumentFolderTree")
+  documents    Document[]
+
+  @@unique([careCircleId, locationKey])
+  @@unique([careCircleId, systemKey])
+  @@index([careCircleId, parentId])
 }
 
 model Activity {

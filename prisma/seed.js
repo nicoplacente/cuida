@@ -1,5 +1,5 @@
-const { PrismaClient } = require("@prisma/client");
-const { scryptSync, randomBytes } = require("crypto");
+import { PrismaClient } from "@prisma/client";
+import { randomBytes, scryptSync } from "crypto";
 
 const prisma = new PrismaClient();
 
@@ -65,6 +65,26 @@ async function main() {
       careCircleId: circle.id,
       role: "ADMIN",
     },
+  });
+
+  await prisma.documentFolder.createMany({
+    data: [
+      {
+        id: "demo-folder-medical-history",
+        careCircleId: circle.id,
+        name: "Historia clínica",
+        locationKey: "root:historia clinica",
+        systemKey: "MEDICAL_HISTORY",
+      },
+      {
+        id: "demo-folder-anamnesis",
+        careCircleId: circle.id,
+        name: "Anamnesis",
+        locationKey: "root:anamnesis",
+        systemKey: "ANAMNESIS",
+      },
+    ],
+    skipDuplicates: true,
   });
 
   await prisma.medication.createMany({

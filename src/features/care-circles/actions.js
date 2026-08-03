@@ -10,6 +10,10 @@ import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField, parseDateInput } from "@/utils/form-data";
 import { calculateAge } from "@/utils/patients";
 import { unexpectedActionError } from "@/utils/server-action-result";
+import {
+  DEFAULT_DOCUMENT_FOLDERS,
+  getFolderLocationKey,
+} from "@/features/documents/folders";
 
 export async function switchCareCircleAction(_previousState, formData) {
   try {
@@ -59,6 +63,12 @@ export async function createCareCircleAction(_previousState, formData) {
           },
         },
         members: { create: { userId: user.id, role: "ADMIN" } },
+        documentFolders: {
+          create: DEFAULT_DOCUMENT_FOLDERS.map((folder) => ({
+            ...folder,
+            locationKey: getFolderLocationKey(null, folder.name),
+          })),
+        },
       },
       select: { id: true },
     });
