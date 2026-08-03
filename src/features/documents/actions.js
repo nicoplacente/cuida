@@ -11,8 +11,10 @@ import {
   getR2UploadErrorMessage,
   uploadR2Object,
 } from "@/services/r2";
-import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
+import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField } from "@/utils/form-data";
+import { logServerError } from "@/utils/safe-logger";
+import { unexpectedActionError } from "@/utils/server-action-result";
 
 const maxFileSize = 8 * 1024 * 1024;
 const allowedMimeTypes = new Set([
@@ -96,7 +98,9 @@ export async function uploadDocumentAction(_previousState, formData) {
   } catch (error) {
     if (objectKey && wasUploaded) {
       await deleteR2Object(objectKey).catch((cleanupError) => {
-        console.error("[uploadDocumentAction:cleanup]", cleanupError);
+        logServerError("uploadDocumentAction:cleanup", cleanupError, {
+          code: "DOCUMENT_CLEANUP_FAILED",
+        });
       });
     }
 

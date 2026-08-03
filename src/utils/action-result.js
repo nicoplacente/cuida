@@ -25,8 +25,3 @@ export function actionError(message = genericActionErrorMessage) {
     data: null,
   };
 }
-
-export function unexpectedActionError(context, error) {
-  console.error(`[${context}]`, error);
-  return actionError();
-}

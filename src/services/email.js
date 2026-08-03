@@ -1,5 +1,7 @@
 import "server-only";
 
+import { SafeServerError } from "@/utils/safe-logger";
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -14,7 +16,7 @@ export async function sendPasswordResetEmail({ email, name, resetUrl }) {
   const from = process.env.RESEND_FROM_EMAIL;
 
   if (!apiKey || !from) {
-    throw new Error("Resend no está configurado.");
+    throw new SafeServerError("EMAIL_CONFIGURATION_ERROR");
   }
 
   const safeName = escapeHtml(name || "");
@@ -97,13 +99,8 @@ export async function sendPasswordResetEmail({ email, name, resetUrl }) {
   });
 
   if (!response.ok) {
-    const responseBody = await response.json().catch(() => null);
-    const error = new Error(`Resend rechazó el envío con estado ${response.status}.`);
-    error.cause = {
-      name: responseBody?.name || null,
-      status: response.status,
-    };
-    throw error;
+    await response.body?.cancel().catch(() => {});
+    throw new SafeServerError("EMAIL_DELIVERY_FAILED");
   }
 
   return response.json();

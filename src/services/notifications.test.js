@@ -4,6 +4,7 @@ import {
   buildNotification,
   getNotificationDateKey,
   getScheduledInstant,
+  validateNotificationEnvironment,
 } from "./notifications.js";
 
 test("calcula el día local de Argentina cerca del cambio de fecha UTC", () => {
@@ -73,4 +74,39 @@ test("programa el aviso de incumplimiento una hora después", () => {
     notification.occurrenceKey,
     "EVENT:MISSED:event-1:2026-07-28:16:00:60",
   );
+});
+
+test("no enumera variables faltantes en errores de configuración", () => {
+  const requiredVariables = [
+    "DATABASE_URL",
+    "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
+    "VAPID_PRIVATE_KEY",
+    "VAPID_SUBJECT",
+  ];
+  const originalValues = new Map(
+    requiredVariables.map((name) => [name, process.env[name]]),
+  );
+
+  for (const name of requiredVariables) delete process.env[name];
+
+  try {
+    assert.throws(validateNotificationEnvironment, (error) => {
+      assert.equal(error.name, "SafeServerError");
+      assert.equal(error.code, "NOTIFICATION_CONFIGURATION_ERROR");
+
+      for (const name of requiredVariables) {
+        assert.equal(error.message.includes(name), false);
+      }
+
+      return true;
+    });
+  } finally {
+    for (const [name, value] of originalValues) {
+      if (value === undefined) {
+        delete process.env[name];
+      } else {
+        process.env[name] = value;
+      }
+    }
+  }
 });

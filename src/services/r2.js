@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash, createHmac } from "crypto";
+import { logServerError } from "@/utils/safe-logger";
 
 const r2Region = "auto";
 const r2Service = "s3";
@@ -8,19 +9,20 @@ const emptyBodyHash = createHash("sha256").update("").digest("hex");
 const requestTimeout = 20_000;
 
 class R2ConfigurationError extends Error {
-  constructor(variableName) {
-    super(`Falta configurar ${variableName}.`);
+  constructor() {
+    super("El almacenamiento no está configurado.");
     this.name = "R2ConfigurationError";
+    this.stack = undefined;
   }
 }
 
 class R2RequestError extends Error {
-  constructor(message, { cause, code, requestId, status } = {}) {
-    super(message, cause ? { cause } : undefined);
+  constructor(message, { code, status } = {}) {
+    super(message);
     this.name = "R2RequestError";
     this.code = code || null;
-    this.requestId = requestId || null;
     this.status = status || null;
+    this.stack = undefined;
   }
 }
 
@@ -28,7 +30,7 @@ function getRequiredEnv(name) {
   const value = process.env[name];
 
   if (!value) {
-    throw new R2ConfigurationError(name);
+    throw new R2ConfigurationError();
   }
 
   return value;
@@ -150,12 +152,10 @@ async function requestR2Object({ body, contentType, key, method }) {
         ? "RequestTimeout"
         : error.cause?.code || "NetworkError";
 
-    console.error(`[R2:${method}]`, {
-      code,
-      message: error.message,
+    logServerError(`R2:${method}`, error, {
+      code: code === "RequestTimeout" ? "R2_REQUEST_TIMEOUT" : "R2_NETWORK_ERROR",
     });
     throw new R2RequestError("No se pudo conectar con R2.", {
-      cause: error,
       code,
     });
   }
@@ -163,21 +163,12 @@ async function requestR2Object({ body, contentType, key, method }) {
   if (!response.ok) {
     const responseBody = await response.text().catch(() => "");
     const code = responseBody.match(/<Code>([^<]+)<\/Code>/)?.[1] || null;
-    const message = responseBody.match(/<Message>([^<]+)<\/Message>/)?.[1] || null;
-    const requestId =
-      response.headers.get("cf-ray") ||
-      responseBody.match(/<RequestId>([^<]+)<\/RequestId>/)?.[1] ||
-      null;
-
-    console.error(`[R2:${method}]`, {
-      code,
-      message,
-      requestId,
+    logServerError(`R2:${method}`, { name: "R2RequestError" }, {
+      code: "R2_REQUEST_REJECTED",
       status: response.status,
     });
     throw new R2RequestError(`R2 respondió con estado ${response.status}.`, {
       code,
-      requestId,
       status: response.status,
     });
   }

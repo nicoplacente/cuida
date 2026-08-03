@@ -19,6 +19,7 @@ const navigation = [
   { href: "/app/historial", label: "Historial" },
   { href: "/app/documentos", label: "Documentos" },
   { href: "/app/equipo", label: "Equipo" },
+  { href: "/app/juegos", label: "Juegos" },
   { href: "/app/asistente", label: "Asistente" },
 ];
 

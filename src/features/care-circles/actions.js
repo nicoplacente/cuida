@@ -6,9 +6,10 @@ import { prisma } from "@/services/db";
 import { requireUser, setActiveCareCircleId } from "@/services/auth";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
-import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
+import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField, parseDateInput } from "@/utils/form-data";
 import { calculateAge } from "@/utils/patients";
+import { unexpectedActionError } from "@/utils/server-action-result";
 
 export async function switchCareCircleAction(_previousState, formData) {
   try {

@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/services/auth";
 import { prisma } from "@/services/db";
-import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
+import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField } from "@/utils/form-data";
+import { unexpectedActionError } from "@/utils/server-action-result";
 
 export async function markNotificationReadAction(_previousState, formData) {
   try {

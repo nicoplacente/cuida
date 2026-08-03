@@ -1,3 +1,8 @@
+const sensitiveLinkHeaders = [
+  { key: "Cache-Control", value: "no-store" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -17,10 +22,11 @@ const nextConfig = {
       },
       {
         source: "/restablecer-contrasena/:path*",
-        headers: [
-          { key: "Cache-Control", value: "no-store" },
-          { key: "Referrer-Policy", value: "no-referrer" },
-        ],
+        headers: sensitiveLinkHeaders,
+      },
+      {
+        source: "/invitacion/:path*",
+        headers: sensitiveLinkHeaders,
       },
     ];
   },

@@ -8,9 +8,10 @@ import { createSession, setActiveCareCircleId } from "@/services/auth";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
 import { getAppUrl } from "@/utils/app-url";
-import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
+import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField, isValidEmail } from "@/utils/form-data";
 import { hashPassword, isValidNewPassword, verifyPassword } from "@/utils/passwords";
+import { unexpectedActionError } from "@/utils/server-action-result";
 
 const allowedInviteRoles = new Set(["CAREGIVER", "OBSERVER"]);
 

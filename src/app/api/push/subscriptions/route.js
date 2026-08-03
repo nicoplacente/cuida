@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/services/auth";
 import { prisma } from "@/services/db";
+import { logServerError } from "@/utils/safe-logger";
 
 function isSameOrigin(request) {
   const origin = request.headers.get("origin");
@@ -55,7 +56,9 @@ export async function POST(request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error("[pushSubscription:POST]", error);
+    logServerError("pushSubscription:POST", error, {
+      code: "PUSH_SUBSCRIPTION_CREATE_FAILED",
+    });
     return Response.json({ error: "No pudimos completar la operación." }, { status: 500 });
   }
 }
@@ -80,7 +83,9 @@ export async function DELETE(request) {
     await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: user.id } });
     return Response.json({ success: true });
   } catch (error) {
-    console.error("[pushSubscription:DELETE]", error);
+    logServerError("pushSubscription:DELETE", error, {
+      code: "PUSH_SUBSCRIPTION_DELETE_FAILED",
+    });
     return Response.json({ error: "No pudimos completar la operación." }, { status: 500 });
   }
 }

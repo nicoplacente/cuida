@@ -6,7 +6,7 @@ import { sendPasswordResetEmail } from "@/services/email";
 import { createSession, destroySession } from "@/services/auth";
 import { createActivity } from "@/services/activity";
 import { getAppUrl } from "@/utils/app-url";
-import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
+import { actionError, actionSuccess } from "@/utils/action-result";
 import { getCheckboxField, getFormField, isValidEmail } from "@/utils/form-data";
 import {
   hashPassword,
@@ -19,6 +19,8 @@ import {
   hashPasswordResetToken,
   isValidPasswordResetToken,
 } from "@/utils/password-reset";
+import { logServerError } from "@/utils/safe-logger";
+import { unexpectedActionError } from "@/utils/server-action-result";
 
 const resetRequestMessage =
   "Si el email pertenece a una cuenta, vas a recibir un enlace para restablecer la contraseña.";
@@ -175,7 +177,9 @@ export async function requestPasswordResetAction(_previousState, formData) {
           await prisma.passwordResetToken
             .deleteMany({ where: { tokenHash } })
             .catch(() => null);
-          console.error("[requestPasswordResetAction:send]", error);
+          logServerError("requestPasswordResetAction:send", error, {
+            code: "PASSWORD_RESET_EMAIL_FAILED",
+          });
         }
       }
     }

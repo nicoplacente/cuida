@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { refreshSession } from "@/services/auth";
+import { logServerError } from "@/utils/safe-logger";
 
 const noStoreHeaders = {
   "Cache-Control": "no-store",
@@ -29,7 +30,9 @@ export async function POST(request) {
       { headers: noStoreHeaders },
     );
   } catch (error) {
-    console.error("[refreshSessionRoute]", error);
+    logServerError("refreshSessionRoute", error, {
+      code: "SESSION_REFRESH_FAILED",
+    });
     return NextResponse.json(
       { message: "No pudimos renovar la sesión." },
       { status: 500, headers: noStoreHeaders },

@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { prisma } from "./db.js";
+import { logServerError, SafeServerError } from "../utils/safe-logger.js";
 import {
   buildNotificationOccurrenceKey,
   getReminderScheduledFor,
@@ -313,9 +314,7 @@ export function validateNotificationEnvironment() {
   const missingVariables = requiredVariables.filter((name) => !process.env[name]);
 
   if (missingVariables.length) {
-    throw new Error(
-      `Faltan variables requeridas para el worker: ${missingVariables.join(", ")}.`,
-    );
+    throw new SafeServerError("NOTIFICATION_CONFIGURATION_ERROR");
   }
 }
 
@@ -354,9 +353,9 @@ async function sendToSubscription(subscription, notification) {
       return true;
     }
 
-    console.error("No se pudo enviar una notificación Push.", {
-      notificationId: notification.id,
-      statusCode: error?.statusCode,
+    logServerError("pushNotification:send", error, {
+      code: "PUSH_DELIVERY_FAILED",
+      status: error?.statusCode,
     });
     return false;
   }

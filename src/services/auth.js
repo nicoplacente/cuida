@@ -15,6 +15,7 @@ import {
   verifyAccessToken,
   verifyRefreshToken,
 } from "@/utils/session-tokens";
+import { SafeServerError } from "@/utils/safe-logger";
 
 const ACCESS_COOKIE = "cuida_access";
 const SESSION_COOKIE = "cuida_session";
@@ -41,7 +42,7 @@ function getSigningSecret() {
   const signingSecret = process.env.SESSION_SECRET;
 
   if (!signingSecret) {
-    throw new Error("SESSION_SECRET es obligatorio para administrar sesiones.");
+    throw new SafeServerError("AUTH_CONFIGURATION_ERROR");
   }
 
   return signingSecret;

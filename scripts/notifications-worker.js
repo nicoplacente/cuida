@@ -6,6 +6,7 @@ import {
   deliverDueNotifications,
   materializeUpcomingNotifications,
 } from "../src/services/notifications.js";
+import { logServerError } from "../src/utils/safe-logger.js";
 
 const POLL_INTERVAL_MS = 30_000;
 let stopping = false;
@@ -31,7 +32,9 @@ async function run() {
         console.log("Ciclo de notificaciones completado.", { materialized, delivered });
       }
     } catch (error) {
-      console.error("Falló el ciclo de notificaciones.", error);
+      logServerError("notificationsWorker:cycle", error, {
+        code: "NOTIFICATION_CYCLE_FAILED",
+      });
     }
 
     if (!stopping) await wait(POLL_INTERVAL_MS);
@@ -42,7 +45,9 @@ async function run() {
 }
 
 run().catch(async (error) => {
-  console.error("El worker de notificaciones se detuvo.", error);
+  logServerError("notificationsWorker:fatal", error, {
+    code: "NOTIFICATION_WORKER_FAILED",
+  });
   await prisma.$disconnect();
   process.exitCode = 1;
 });

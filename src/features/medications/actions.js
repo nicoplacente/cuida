@@ -5,10 +5,11 @@ import { prisma } from "@/services/db";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
 import { cancelPendingNotifications } from "@/services/notifications";
-import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
+import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField, isValidTimeInput, parseDateInput } from "@/utils/form-data";
 import { getMedicationOccurrences } from "@/utils/medication-schedules";
 import { parseReminderMinutes } from "@/utils/reminders";
+import { unexpectedActionError } from "@/utils/server-action-result";
 
 const scheduleTypes = new Set(["DAILY_TIMES", "INTERVAL"]);
 

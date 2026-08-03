@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/services/db";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
-import { actionError, actionSuccess, unexpectedActionError } from "@/utils/action-result";
+import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField, parseDateTimeInput } from "@/utils/form-data";
+import { unexpectedActionError } from "@/utils/server-action-result";
 
 const allowedLogTypes = new Set([
   "MEAL",
