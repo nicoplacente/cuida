@@ -53,6 +53,16 @@ input[type="week"] {
   width: 100%;
 }
 
+@supports (-webkit-touch-callout: none) {
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"] {
+    width: calc(100% - 2rem);
+  }
+}
+
 button,
 a,
 input,
