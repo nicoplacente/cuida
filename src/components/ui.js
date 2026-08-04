@@ -6,10 +6,11 @@ export function Shell({ children, className = "" }) {
   );
 }
 
-export function Card({ children, className = "" }) {
+export function Card({ children, className = "", ...props }) {
   return (
     <section
       className={`rounded-2xl border border-[color:var(--care-cloud)] bg-white shadow-[0_18px_60px_rgba(11,31,58,0.06)] ${className}`}
+      {...props}
     >
       {children}
     </section>

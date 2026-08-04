@@ -1,0 +1,28 @@
+{
+  "id": "/app",
+  "name": "Cuida — Cuidado compartido",
+  "short_name": "Cuida",
+  "description": "Organizá medicamentos, turnos, tareas y cuidados diarios con tu círculo de cuidado.",
+  "start_url": "/app",
+  "scope": "/",
+  "lang": "es-AR",
+  "dir": "ltr",
+  "display": "standalone",
+  "background_color": "#f5f8fb",
+  "theme_color": "#0b1f3a",
+  "categories": ["health", "medical", "productivity"],
+  "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

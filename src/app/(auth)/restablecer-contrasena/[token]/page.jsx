@@ -11,7 +11,7 @@ import {
 } from "@/utils/password-reset";
 
 export const metadata = {
-  title: "Crear nueva contraseña | Cuida",
+  title: "Crear nueva contraseña",
 };
 
 export default async function ResetPasswordPage({ params }) {

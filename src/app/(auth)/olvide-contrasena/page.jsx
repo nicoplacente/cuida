@@ -4,7 +4,7 @@ import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { Card, Field, SecondaryLink, inputClassName } from "@/components/ui";
 
 export const metadata = {
-  title: "Recuperar contraseña | Cuida",
+  title: "Recuperar contraseña",
 };
 
 export default function ForgotPasswordPage() {

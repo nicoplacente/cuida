@@ -1,7 +1,21 @@
 import Image from "next/image";
-import { Badge, Card, LinkButton, SectionTitle, Shell } from "@/components/ui";
+import { LandingFooter } from "@/components/landing-footer";
 import { MobileLandingNavigation } from "@/components/mobile-landing-navigation";
+import { Badge, Card, LinkButton, SectionTitle, Shell } from "@/components/ui";
 import { getDonationUrl } from "@/utils/donation-url";
+import {
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+  createLandingJsonLd,
+  createPublicMetadata,
+  serializeJsonLd,
+} from "@/utils/seo";
+
+export const metadata = createPublicMetadata({
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  path: "/",
+});
 
 const features = [
   "Medicación",
@@ -22,10 +36,15 @@ const problemPoints = [
 
 export default function Home() {
   const donationUrl = getDonationUrl();
+  const jsonLd = createLandingJsonLd();
 
   return (
-    <main className="min-h-screen bg-[color:var(--care-canvas)]">
-      <header className="relative z-40 border-b border-[color:var(--care-cloud)] bg-white/85 backdrop-blur">
+    <main id="inicio" className="min-h-screen bg-[color:var(--care-canvas)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
+      <header className="sticky top-0 z-50 border-b border-[color:var(--care-cloud)] bg-white/90 backdrop-blur">
         <Shell className="relative flex min-h-20 items-center justify-between gap-4">
           <a href="/" className="flex items-center gap-3 font-semibold">
             <Image
@@ -42,11 +61,17 @@ export default function Home() {
             <a href="#solucion" className="hover:text-[color:var(--care-ink)]">
               Solución
             </a>
-            <a href="#caracteristicas" className="hover:text-[color:var(--care-ink)]">
+            <a
+              href="#caracteristicas"
+              className="hover:text-[color:var(--care-ink)]"
+            >
               Características
             </a>
             {donationUrl ? (
-              <a href="#donaciones" className="hover:text-[color:var(--care-ink)]">
+              <a
+                href="#donaciones"
+                className="hover:text-[color:var(--care-ink)]"
+              >
                 Donar
               </a>
             ) : null}
@@ -113,7 +138,9 @@ export default function Home() {
                         {time}
                       </p>
                     </div>
-                    <Badge tone={status === "Pendiente" ? "warning" : "neutral"}>
+                    <Badge
+                      tone={status === "Pendiente" ? "warning" : "neutral"}
+                    >
                       {status}
                     </Badge>
                   </div>
@@ -127,22 +154,31 @@ export default function Home() {
       <section className="py-20">
         <Shell className="grid gap-8 lg:grid-cols-2">
           <Card className="p-8">
-            <SectionTitle eyebrow="Problema actual" title="Cuidar con información dispersa cansa y aumenta errores.">
+            <SectionTitle
+              eyebrow="Problema actual"
+              title="Cuidar con información dispersa cansa y aumenta errores."
+            >
               Muchas familias coordinan cuidados con mensajes, papeles y
               recordatorios separados. Eso funciona un tiempo, hasta que algo se
               pierde.
             </SectionTitle>
             <div className="mt-8 grid gap-3">
               {problemPoints.map((point) => (
-                <p key={point} className="rounded-2xl bg-[#f8fbfd] p-4 font-medium">
+                <p
+                  key={point}
+                  className="rounded-2xl bg-[#f8fbfd] p-4 font-medium"
+                >
                   {point}
                 </p>
               ))}
             </div>
           </Card>
 
-          <Card id="solucion" className="p-8">
-            <SectionTitle eyebrow="Solución" title="Cuida centraliza lo importante para todo el equipo.">
+          <Card id="solucion" className="scroll-mt-28 p-8">
+            <SectionTitle
+              eyebrow="Solución"
+              title="Cuida centraliza lo importante para todo el equipo."
+            >
               Cada cuidador ve el mismo plan del día, registra lo que hizo y
               deja información clara para quien sigue.
             </SectionTitle>
@@ -158,9 +194,12 @@ export default function Home() {
         </Shell>
       </section>
 
-      <section id="caracteristicas" className="bg-white py-20">
+      <section id="caracteristicas" className="scroll-mt-20 bg-white py-20">
         <Shell>
-          <SectionTitle eyebrow="Características" title="Todo el cuidado diario en una experiencia simple.">
+          <SectionTitle
+            eyebrow="Características"
+            title="Todo el cuidado diario en una experiencia simple."
+          >
             Diseñada para familias, cuidadores y personas que necesitan una
             coordinación clara, humana y accesible.
           </SectionTitle>
@@ -193,7 +232,10 @@ export default function Home() {
                 mobile y asistencia inteligente.
               </p>
             </div>
-            <LinkButton href="/registro" className="!bg-white !text-[color:var(--care-ink)]">
+            <LinkButton
+              href="/registro"
+              className="!bg-white !text-[color:var(--care-ink)]"
+            >
               Comenzar gratis
             </LinkButton>
           </Card>
@@ -201,7 +243,7 @@ export default function Home() {
       </section>
 
       {donationUrl ? (
-        <section id="donaciones" className="bg-white py-20 scroll-mt-4">
+        <section id="donaciones" className="scroll-mt-20 bg-white py-20">
           <Shell>
             <Card className="grid gap-8 overflow-hidden p-8 lg:grid-cols-[1fr_auto] lg:items-center lg:p-10">
               <SectionTitle
@@ -248,6 +290,7 @@ export default function Home() {
           </Card>
         </Shell>
       </section>
+      <LandingFooter showDonations={Boolean(donationUrl)} />
     </main>
   );
 }
