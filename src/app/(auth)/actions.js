@@ -7,7 +7,13 @@ import { createSession, destroySession } from "@/services/auth";
 import { createActivity } from "@/services/activity";
 import { getAppUrl } from "@/utils/app-url";
 import { actionError, actionSuccess } from "@/utils/action-result";
-import { getCheckboxField, getFormField, isValidEmail } from "@/utils/form-data";
+import {
+  getCheckboxField,
+  getFormField,
+  isValidEmail,
+  parseDateInput,
+} from "@/utils/form-data";
+import { calculateAge } from "@/utils/patients";
 import {
   hashPassword,
   isValidNewPassword,
@@ -40,13 +46,18 @@ export async function registerAction(_previousState, formData) {
   const email = getFormField(formData, "email").toLowerCase();
   const password = getFormField(formData, "password");
   const patientName = getFormField(formData, "patientName");
-  const patientAge = Number(getFormField(formData, "patientAge"));
+  const birthDateValue = getFormField(formData, "birthDate");
+  const birthDate = parseDateInput(birthDateValue);
+  const patientAge = birthDate ? calculateAge(birthDate) : null;
   const medicalCondition = getFormField(formData, "medicalCondition");
 
-  if (!name || !isValidEmail(email) || !isValidNewPassword(password) || !patientName || patientAge < 1) {
+  if (!name || !isValidEmail(email) || !isValidNewPassword(password) || !patientName) {
     return actionError(
       "Completá los campos obligatorios. La contraseña debe tener al menos 8 caracteres.",
     );
+  }
+  if (!birthDate || patientAge === null) {
+    return actionError("Ingresá una fecha de nacimiento válida.");
   }
 
   try {
@@ -76,6 +87,7 @@ export async function registerAction(_previousState, formData) {
                   create: {
                     name: patientName,
                     age: patientAge,
+                    birthDate,
                     medicalCondition: medicalCondition || null,
                   },
                 },

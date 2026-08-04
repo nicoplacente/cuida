@@ -133,7 +133,7 @@ export function MemoryGame() {
     pairCount === 2
       ? "grid-cols-2 sm:grid-cols-4"
       : pairCount === 3
-        ? "grid-cols-2 sm:grid-cols-3"
+        ? "grid-cols-2 sm:grid-cols-4"
         : "grid-cols-2 sm:grid-cols-4 xl:grid-cols-5";
 
   return (

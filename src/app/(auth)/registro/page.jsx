@@ -57,16 +57,15 @@ export default function RegisterPage() {
               required
             />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-[1fr_140px]">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Nombre de la persona cuidada">
               <input className={inputClassName} name="patientName" required />
             </Field>
-            <Field label="Edad">
+            <Field label="Fecha de nacimiento">
               <input
                 className={inputClassName}
-                type="number"
-                name="patientAge"
-                min="1"
+                type="date"
+                name="birthDate"
                 required
               />
             </Field>
