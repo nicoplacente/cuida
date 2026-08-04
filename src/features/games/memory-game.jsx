@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { PrimaryButton } from "@/components/ui";
+import { GameCompletionModal } from "@/components/game-completion-modal";
 import {
   createMemoryDeck,
   getPairCountForLevel,
@@ -137,7 +137,7 @@ export function MemoryGame() {
         : "grid-cols-2 sm:grid-cols-4 xl:grid-cols-5";
 
   return (
-    <div className="grid gap-6">
+    <div className="relative grid gap-6">
       <div className="grid gap-4 rounded-2xl bg-[#f8fbfd] p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[color:var(--care-teal)]">
@@ -226,33 +226,23 @@ export function MemoryGame() {
       </div>
 
       {status === "complete" ? (
-        <div
-          className="rounded-2xl border border-[color:var(--care-teal)] bg-[color:var(--care-teal-soft)] p-5 text-center"
-          role="status"
-        >
-          <h2 className="text-xl font-semibold">¡Nivel completado!</h2>
-          <p className="mt-2 text-sm text-[color:var(--care-ink-soft)]">
-            El próximo nivel suma un nuevo par de cartas.
-          </p>
-          <PrimaryButton className="mt-4" onClick={handleNextLevel} type="button">
-            Jugar nivel {level + 1}
-          </PrimaryButton>
-        </div>
+        <GameCompletionModal
+          description="El próximo nivel suma un nuevo par de cartas."
+          onPrimaryAction={handleNextLevel}
+          onRestart={handleRestartLevel}
+          primaryLabel={`Jugar nivel ${level + 1}`}
+          title="¡Nivel completado!"
+        />
       ) : null}
 
       {status === "finished" ? (
-        <div
-          className="rounded-2xl border border-[color:var(--care-teal)] bg-[color:var(--care-teal-soft)] p-5 text-center"
-          role="status"
-        >
-          <h2 className="text-xl font-semibold">¡Completaste todos los niveles!</h2>
-          <p className="mt-2 text-sm text-[color:var(--care-ink-soft)]">
-            Encontraste todos los pares del desafío de memoria.
-          </p>
-          <PrimaryButton className="mt-4" onClick={handleResetProgress} type="button">
-            Volver al nivel 1
-          </PrimaryButton>
-        </div>
+        <GameCompletionModal
+          description="Encontraste todos los pares del desafío de memoria."
+          onPrimaryAction={handleResetProgress}
+          onRestart={handleRestartLevel}
+          primaryLabel="Volver al nivel 1"
+          title="¡Completaste todos los niveles!"
+        />
       ) : null}
 
       {level > 1 && status !== "finished" ? (

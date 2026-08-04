@@ -20,6 +20,8 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--care-teal) var(--care-canvas);
 }
 
 body {

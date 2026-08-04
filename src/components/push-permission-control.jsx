@@ -28,6 +28,19 @@ async function getServiceWorkerRegistration() {
   );
 }
 
+async function saveSubscription(subscription) {
+  try {
+    const response = await fetch("/api/push/subscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(subscription.toJSON()),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function removeSubscription(subscription) {
   const response = await fetch("/api/push/subscriptions", {
     method: "DELETE",
@@ -80,7 +93,7 @@ export function PushPermissionControl({ publicKey }) {
         setStatus(hasCurrentSubscription ? "enabled" : "idle");
       })
       .catch(() => {
-        if (isMounted) setStatus("unsupported");
+        if (isMounted) setStatus("idle");
       });
 
     return () => {
@@ -120,13 +133,16 @@ export function PushPermissionControl({ publicKey }) {
           userVisibleOnly: true,
           applicationServerKey,
         }));
-      const response = await fetch("/api/push/subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(subscription.toJSON()),
-      });
 
-      if (!response.ok) throw new Error("No se pudo guardar la suscripción.");
+      const saved = await saveSubscription(subscription);
+      if (!saved) {
+        setStatus("idle");
+        toast.error(
+          "El permiso está habilitado, pero no pudimos guardar los avisos. Intentá nuevamente.",
+        );
+        return;
+      }
+
       setStatus("enabled");
       toast.success("Avisos activados en este dispositivo.");
     } catch {

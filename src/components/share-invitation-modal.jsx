@@ -4,9 +4,19 @@ import { useEffect, useRef, useState } from "react";
 import { CopyButton } from "@/components/copy-button";
 import { CloseIcon } from "@/components/icons/close-icon";
 import { WhatsappIcon } from "@/components/icons/whatsapp-icon";
+import {
+  createWhatsAppInvitationMessage,
+  getWhatsAppAppShareUrl,
+  getWhatsAppWebShareUrl,
+  shouldUseWhatsAppAppLink,
+} from "@/utils/whatsapp";
+
+const whatsappFallbackDelay = 1_200;
 
 export function ShareInvitationModal({ invitation, onClose }) {
   const closeButtonRef = useRef(null);
+  const whatsappFallbackRef = useRef(null);
+  const whatsappVisibilityHandlerRef = useRef(null);
 
   useEffect(() => {
     if (!invitation) {
@@ -27,6 +37,17 @@ export function ShareInvitationModal({ invitation, onClose }) {
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      if (whatsappFallbackRef.current) {
+        window.clearTimeout(whatsappFallbackRef.current);
+        whatsappFallbackRef.current = null;
+      }
+      if (whatsappVisibilityHandlerRef.current) {
+        document.removeEventListener(
+          "visibilitychange",
+          whatsappVisibilityHandlerRef.current,
+        );
+        whatsappVisibilityHandlerRef.current = null;
+      }
     };
   }, [invitation, onClose]);
 
@@ -34,8 +55,43 @@ export function ShareInvitationModal({ invitation, onClose }) {
     return null;
   }
 
-  const message = `Hola${invitation.name ? `, ${invitation.name}` : ""}. Te invito a sumarte a nuestro círculo de cuidado en Cuida: ${invitation.link}`;
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  const message = createWhatsAppInvitationMessage(invitation);
+  const whatsappAppUrl = getWhatsAppAppShareUrl(message);
+  const whatsappWebUrl = getWhatsAppWebShareUrl(message);
+
+  function handleWhatsAppShare() {
+    const device = {
+      maxTouchPoints: window.navigator.maxTouchPoints,
+      platform: window.navigator.platform,
+      userAgent: window.navigator.userAgent,
+    };
+
+    if (!shouldUseWhatsAppAppLink(device)) {
+      window.open(whatsappWebUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    function cancelFallback() {
+      if (!document.hidden || !whatsappFallbackRef.current) {
+        return;
+      }
+
+      window.clearTimeout(whatsappFallbackRef.current);
+      whatsappFallbackRef.current = null;
+      document.removeEventListener("visibilitychange", cancelFallback);
+      whatsappVisibilityHandlerRef.current = null;
+    }
+
+    whatsappVisibilityHandlerRef.current = cancelFallback;
+    document.addEventListener("visibilitychange", cancelFallback);
+    whatsappFallbackRef.current = window.setTimeout(() => {
+      whatsappFallbackRef.current = null;
+      document.removeEventListener("visibilitychange", cancelFallback);
+      whatsappVisibilityHandlerRef.current = null;
+      window.location.assign(whatsappWebUrl);
+    }, whatsappFallbackDelay);
+    window.location.assign(whatsappAppUrl);
+  }
 
   return (
     <div
@@ -77,16 +133,15 @@ export function ShareInvitationModal({ invitation, onClose }) {
           {invitation.link}
         </p>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <a
-            className="inline-flex items-center justify-center gap-1 rounded-full bg-green-500 text-gray-50 py-2 text-sm font-semibold text-[#082b18] transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-            href={whatsappUrl}
-            rel="noreferrer"
-            target="_blank"
+        <div className="mt-5 flex flex-col gap-3">
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-green-500 px-5 py-3 text-sm font-semibold text-[#f1f1f1f1] transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
+            onClick={handleWhatsAppShare}
+            type="button"
           >
             <WhatsappIcon />
             Compartir por WhatsApp
-          </a>
+          </button>
           <CopyButton value={invitation.link} />
         </div>
       </div>

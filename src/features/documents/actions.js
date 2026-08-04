@@ -11,6 +11,10 @@ import {
   getR2UploadErrorMessage,
   uploadR2Object,
 } from "@/services/r2";
+import {
+  deleteDocumentObjects,
+  isCareCircleDocumentKey,
+} from "@/services/document-storage";
 import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField } from "@/utils/form-data";
 import { logServerError } from "@/utils/safe-logger";
@@ -24,7 +28,6 @@ import {
 const maxFileSize = 8 * 1024 * 1024;
 const maxTitleLength = 120;
 const maxNotesLength = 2_000;
-const deletionBatchSize = 4;
 const allowedMimeTypes = new Set([
   "application/pdf",
   "image/png",
@@ -50,10 +53,6 @@ function validateDocumentMetadata(title, notes) {
   return null;
 }
 
-function isCareCircleDocumentKey(filePath, careCircleId) {
-  return filePath.startsWith(`documents/${careCircleId}/`);
-}
-
 function isUniqueConstraintError(error) {
   return error?.code === "P2002";
 }
@@ -67,13 +66,6 @@ async function getFolderAssignment(folderId, careCircleId) {
   });
 
   return folder ? { folderId: folder.id } : null;
-}
-
-async function deleteDocumentObjects(filePaths) {
-  for (let index = 0; index < filePaths.length; index += deletionBatchSize) {
-    const batch = filePaths.slice(index, index + deletionBatchSize);
-    await Promise.all(batch.map((filePath) => deleteR2Object(filePath)));
-  }
 }
 
 function revalidateDocuments() {

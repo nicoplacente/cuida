@@ -16,7 +16,9 @@ export function EditModal({
   title,
   children,
   triggerClassName = "",
+  triggerDisabled = false,
   triggerLabel = "Editar",
+  triggerTitle,
   triggerTone = "neutral",
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -72,7 +74,7 @@ export function EditModal({
   return (
     <>
       <button
-        className={`rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+        className={`rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-55 ${
           triggerTone === "danger"
             ? "border-[#f3c7c2] bg-white text-[color:var(--care-danger)] hover:border-[color:var(--care-danger)]"
             : triggerTone === "primary"
@@ -81,6 +83,8 @@ export function EditModal({
         } ${triggerClassName}`}
         onClick={() => setIsOpen(true)}
         ref={triggerRef}
+        disabled={triggerDisabled}
+        title={triggerTitle}
         type="button"
       >
         {triggerLabel}

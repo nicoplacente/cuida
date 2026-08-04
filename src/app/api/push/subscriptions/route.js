@@ -1,11 +1,7 @@
 import { getCurrentUser } from "@/services/auth";
 import { prisma } from "@/services/db";
+import { isRequestFromAppOrigin } from "@/utils/app-url";
 import { logServerError } from "@/utils/safe-logger";
-
-function isSameOrigin(request) {
-  const origin = request.headers.get("origin");
-  return origin === new URL(request.url).origin;
-}
 
 function isValidSubscription(subscription) {
   if (!subscription || typeof subscription !== "object") return false;
@@ -25,7 +21,7 @@ function isValidSubscription(subscription) {
 
 export async function POST(request) {
   try {
-    if (!isSameOrigin(request)) {
+    if (!isRequestFromAppOrigin(request)) {
       return Response.json({ error: "Solicitud no válida." }, { status: 403 });
     }
 
@@ -65,7 +61,7 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    if (!isSameOrigin(request)) {
+    if (!isRequestFromAppOrigin(request)) {
       return Response.json({ error: "Solicitud no válida." }, { status: 403 });
     }
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Badge, PrimaryButton } from "@/components/ui";
+import { GameCompletionModal } from "@/components/game-completion-modal";
+import { Badge } from "@/components/ui";
 import {
   getCategorySortingLevel,
   isCorrectCategory,
@@ -303,13 +304,17 @@ export function CategorySortingGame() {
     startLevel(nextLevelNumber);
   }
 
+  function handleRestartLevel() {
+    startLevel(levelNumber);
+  }
+
   function handleResetProgress() {
     saveLevel(1);
     startLevel(1);
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="relative grid gap-6">
       <div className="grid gap-4 rounded-2xl bg-[color:var(--care-canvas)] p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[color:var(--care-teal)]">
@@ -345,7 +350,7 @@ export function CategorySortingGame() {
 
         <button
           className="min-h-10 rounded-full border border-[color:var(--care-cloud)] bg-[color:var(--care-paper)] px-4 py-2 text-sm font-semibold text-[color:var(--care-ink)] transition hover:border-[color:var(--care-teal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-          onClick={() => startLevel(levelNumber)}
+          onClick={handleRestartLevel}
           type="button"
         >
           Reiniciar nivel
@@ -490,35 +495,23 @@ export function CategorySortingGame() {
       </p>
 
       {status === "complete" ? (
-        <div
-          className="rounded-2xl border border-[color:var(--care-teal)] bg-[color:var(--care-teal-soft)] p-5 text-center"
-          role="status"
-        >
-          <h2 className="text-xl font-semibold">¡Nivel completado!</h2>
-          <p className="mt-2 text-sm text-[color:var(--care-ink-soft)]">
-            El próximo nivel suma palabras y categorías de manera gradual.
-          </p>
-          <PrimaryButton className="mt-4" onClick={handleNextLevel} type="button">
-            Jugar nivel {levelNumber + 1}
-          </PrimaryButton>
-        </div>
+        <GameCompletionModal
+          description="El próximo nivel suma palabras y categorías de manera gradual."
+          onPrimaryAction={handleNextLevel}
+          onRestart={handleRestartLevel}
+          primaryLabel={`Jugar nivel ${levelNumber + 1}`}
+          title="¡Nivel completado!"
+        />
       ) : null}
 
       {status === "finished" ? (
-        <div
-          className="rounded-2xl border border-[color:var(--care-teal)] bg-[color:var(--care-teal-soft)] p-5 text-center"
-          role="status"
-        >
-          <h2 className="text-xl font-semibold">
-            ¡Completaste todas las categorías!
-          </h2>
-          <p className="mt-2 text-sm text-[color:var(--care-ink-soft)]">
-            Cada palabra encontró su lugar en el recorrido Cuida.
-          </p>
-          <PrimaryButton className="mt-4" onClick={handleResetProgress} type="button">
-            Volver al nivel 1
-          </PrimaryButton>
-        </div>
+        <GameCompletionModal
+          description="Cada palabra encontró su lugar en el recorrido Cuida."
+          onPrimaryAction={handleResetProgress}
+          onRestart={handleRestartLevel}
+          primaryLabel="Volver al nivel 1"
+          title="¡Completaste todas las categorías!"
+        />
       ) : null}
 
       {levelNumber > 1 && status !== "finished" ? (

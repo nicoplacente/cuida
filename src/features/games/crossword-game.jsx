@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GameCompletionModal } from "@/components/game-completion-modal";
 import { Badge, PrimaryButton } from "@/components/ui";
 import {
   checkCrossword,
@@ -275,6 +276,10 @@ export function CrosswordGame() {
     startLevel(nextLevelNumber);
   }
 
+  function handleRestartLevel() {
+    startLevel(levelNumber);
+  }
+
   function handleResetProgress() {
     saveLevel(1);
     startLevel(1);
@@ -284,7 +289,7 @@ export function CrosswordGame() {
   const verticalEntries = level.entries.filter((entry) => entry.direction === "down");
 
   return (
-    <div className="grid gap-6">
+    <div className="relative grid gap-6">
       <div className="grid gap-4 rounded-2xl bg-[#f8fbfd] p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[color:var(--care-teal)]">
@@ -320,7 +325,7 @@ export function CrosswordGame() {
 
         <button
           className="min-h-10 rounded-full border border-[color:var(--care-cloud)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--care-ink)] transition hover:border-[color:var(--care-teal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-          onClick={() => startLevel(levelNumber)}
+          onClick={handleRestartLevel}
           type="button"
         >
           Reiniciar nivel
@@ -461,33 +466,23 @@ export function CrosswordGame() {
       </div>
 
       {status === "complete" ? (
-        <div
-          className="rounded-2xl border border-[color:var(--care-teal)] bg-[color:var(--care-teal-soft)] p-5 text-center"
-          role="status"
-        >
-          <h2 className="text-xl font-semibold">¡Nivel completado!</h2>
-          <p className="mt-2 text-sm text-[color:var(--care-ink-soft)]">
-            El próximo crucigrama suma palabras y cruces de manera gradual.
-          </p>
-          <PrimaryButton className="mt-4" onClick={handleNextLevel} type="button">
-            Jugar nivel {levelNumber + 1}
-          </PrimaryButton>
-        </div>
+        <GameCompletionModal
+          description="El próximo crucigrama suma palabras y cruces de manera gradual."
+          onPrimaryAction={handleNextLevel}
+          onRestart={handleRestartLevel}
+          primaryLabel={`Jugar nivel ${levelNumber + 1}`}
+          title="¡Nivel completado!"
+        />
       ) : null}
 
       {status === "finished" ? (
-        <div
-          className="rounded-2xl border border-[color:var(--care-teal)] bg-[color:var(--care-teal-soft)] p-5 text-center"
-          role="status"
-        >
-          <h2 className="text-xl font-semibold">¡Completaste todos los crucigramas!</h2>
-          <p className="mt-2 text-sm text-[color:var(--care-ink-soft)]">
-            Resolviste cada pista del recorrido Cuida.
-          </p>
-          <PrimaryButton className="mt-4" onClick={handleResetProgress} type="button">
-            Volver al nivel 1
-          </PrimaryButton>
-        </div>
+        <GameCompletionModal
+          description="Resolviste cada pista del recorrido Cuida."
+          onPrimaryAction={handleResetProgress}
+          onRestart={handleRestartLevel}
+          primaryLabel="Volver al nivel 1"
+          title="¡Completaste todos los crucigramas!"
+        />
       ) : null}
 
       {levelNumber > 1 && status !== "finished" ? (

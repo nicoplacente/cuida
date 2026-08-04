@@ -479,6 +479,11 @@ export async function setActiveCareCircleId(careCircleId) {
   );
 }
 
+export async function clearActiveCareCircleId() {
+  const cookieStore = await cookies();
+  cookieStore.delete(ACTIVE_CARE_CIRCLE_COOKIE);
+}
+
 export async function getActiveCareCircleId() {
   const cookieStore = await cookies();
   return cookieStore.get(ACTIVE_CARE_CIRCLE_COOKIE)?.value || null;

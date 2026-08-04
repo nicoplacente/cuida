@@ -40,7 +40,7 @@ export function CopyButton({ value, label = "Copiar enlace" }) {
       type="button"
       onClick={handleCopy}
       aria-label={isCopied ? "Enlace copiado" : label}
-      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-(--care-ink) px-5 py-2 text-sm font-semibold text-white transition hover:brightness-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-(--care-ink) px-5 py-3 text-sm font-semibold text-white transition hover:brightness-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
     >
       {isCopied ? <CheckIcon /> : <CopyIcon />}
       <span aria-live="polite">{isCopied ? "Copiado" : label}</span>
