@@ -1,6 +1,8 @@
 export function Shell({ children, className = "" }) {
   return (
-    <div className={`mx-auto min-w-0 w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>
+    <div
+      className={`mx-auto min-w-0 w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}
+    >
       {children}
     </div>
   );
@@ -74,7 +76,7 @@ export function SecondaryLink({ children, className = "", href }) {
 export function Field({ label, children, htmlFor }) {
   if (htmlFor) {
     return (
-      <div className="grid min-w-0 gap-2 text-sm font-semibold text-[color:var(--care-ink)]">
+      <div className="grid min-w-0 gap-2 text-[16px] sm:text-sm font-semibold text-[color:var(--care-ink)]">
         <label htmlFor={htmlFor}>{label}</label>
         {children}
       </div>
@@ -82,7 +84,7 @@ export function Field({ label, children, htmlFor }) {
   }
 
   return (
-    <label className="grid min-w-0 gap-2 text-sm font-semibold text-[color:var(--care-ink)]">
+    <label className="grid min-w-0 gap-2 text-[16px] sm:text-sm font-semibold text-[color:var(--care-ink)]">
       <span>{label}</span>
       {children}
     </label>
@@ -115,7 +117,9 @@ export function EmptyState({ title, children }) {
     <div className="rounded-2xl border border-dashed border-[color:var(--care-cloud)] bg-[#f8fbfd] p-6 text-center">
       <p className="font-semibold text-[color:var(--care-ink)]">{title}</p>
       {children ? (
-        <p className="mt-2 text-sm text-[color:var(--care-muted)]">{children}</p>
+        <p className="mt-2 text-sm text-[color:var(--care-muted)]">
+          {children}
+        </p>
       ) : null}
     </div>
   );

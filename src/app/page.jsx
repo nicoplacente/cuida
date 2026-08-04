@@ -24,8 +24,9 @@ const features = [
   "Tareas compartidas",
   "Historial diario",
   "Documentos",
-  "Alertas",
+  "Historia clínica",
   "Equipo de cuidadores",
+  "Juegos",
 ];
 
 const problemPoints = [
@@ -97,8 +98,9 @@ export default function Home() {
               Cuidar juntos ahora es más fácil
             </h1>
             <p className="mt-6 max-w-2xl text-xl leading-8 text-[color:var(--care-ink-soft)]">
-              Organizá medicamentos, turnos, tareas y cuidados diarios de tus
-              seres queridos en un solo lugar.
+              Organizá de forma simple cada aspecto del cuidado: rutinas,
+              medicamentos, turnos, tareas, información importante y el trabajo
+              compartido entre quienes la acompañan.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <LinkButton href="/registro">Comenzar gratis</LinkButton>
@@ -158,7 +160,7 @@ export default function Home() {
           <Card className="p-8">
             <SectionTitle
               eyebrow="Problema actual"
-              title="Cuidar con información dispersa cansa y aumenta errores."
+              title="Cuidar a una persona con deterioro cognitivo implica coordinar muchas cosas."
             >
               Muchas familias coordinan cuidados con mensajes, papeles y
               recordatorios separados. Eso funciona un tiempo, hasta que algo se
@@ -179,17 +181,19 @@ export default function Home() {
           <Card id="solucion" className="scroll-mt-28 p-8">
             <SectionTitle
               eyebrow="Solución"
-              title="Cuida centraliza lo importante para todo el equipo."
+              title="Que la información esté disponible en un solo lugar hace toda la diferencia."
             >
               Cada cuidador ve el mismo plan del día, registra lo que hizo y
-              deja información clara para quien sigue.
+              deja información clara. Todo en un solo lugar para que todos sepan
+              qué hacer y cuándo hacerlo.
             </SectionTitle>
             <div className="mt-8 rounded-2xl bg-[color:var(--care-ink)] p-6 text-white">
               <p className="text-sm font-semibold text-[color:var(--care-teal)]">
                 Impacto social
               </p>
               <p className="mt-3 text-2xl font-semibold tracking-[-0.02em]">
-                Una herramienta abierta para cuidar mejor, sin barreras de pago.
+                Una herramienta simple para cuidar mejor, gratis y a un solo
+                clic.
               </p>
             </div>
           </Card>
