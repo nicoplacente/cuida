@@ -70,7 +70,12 @@ export function SubmitButton({
   const { pending } = useFormStatus();
 
   return (
-    <PrimaryButton disabled={pending} className={className} type="submit" {...props}>
+    <PrimaryButton
+      disabled={pending}
+      className={className}
+      type="submit"
+      {...props}
+    >
       {pending ? pendingLabel : children}
     </PrimaryButton>
   );
@@ -92,7 +97,7 @@ export function SecondarySubmitButton({
     <button
       type="submit"
       disabled={pending}
-      className={`rounded-full border bg-white px-4 py-2 text-sm font-semibold transition hover:border-[color:var(--care-teal)] disabled:cursor-not-allowed disabled:opacity-60 ${toneClassName} ${className}`}
+      className={`rounded-full w-full border bg-white px-4 py-2 text-sm font-semibold transition hover:border-[color:var(--care-teal)] disabled:cursor-not-allowed disabled:opacity-60 ${toneClassName} ${className}`}
     >
       {pending ? pendingLabel : children}
     </button>

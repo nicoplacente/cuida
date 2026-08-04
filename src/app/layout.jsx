@@ -1,6 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { PwaRegistration } from "@/components/pwa-registration";
+import { PwaProvider } from "@/components/pwa-registration";
 import { ToastProvider } from "@/components/toast-provider";
 import {
   SITE_DESCRIPTION,
@@ -56,9 +56,10 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col text-[17px] leading-relaxed">
-        <PwaRegistration />
-        <ToastProvider />
-        {children}
+        <PwaProvider>
+          <ToastProvider />
+          {children}
+        </PwaProvider>
       </body>
     </html>
   );

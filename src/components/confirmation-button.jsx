@@ -30,7 +30,7 @@ export function ConfirmationButton({
           <p className="text-[color:var(--care-ink-soft)]">{description}</p>
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
-              className="rounded-full border border-[color:var(--care-cloud)] bg-white px-4 py-2 text-sm font-semibold transition hover:border-[color:var(--care-teal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="rounded-full border border-[color:var(--care-cloud)] bg-white px-4 py-2 text-sm font-semibold transition hover:border-[color:var(--care-teal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 "
               onClick={close}
               type="button"
             >

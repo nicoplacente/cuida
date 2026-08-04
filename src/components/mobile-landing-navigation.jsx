@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CloseIcon } from "@/components/icons/close-icon";
+import { InstallAppButton } from "@/components/install-app-button";
 import { MenuIcon } from "@/components/icons/menu-icon";
 import { LinkButton } from "@/components/ui";
 
@@ -25,7 +26,7 @@ export function MobileLandingNavigation({ showDonations = false }) {
   }
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <button
         aria-expanded={isOpen}
         aria-label={isOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
@@ -72,6 +73,7 @@ export function MobileLandingNavigation({ showDonations = false }) {
           >
             Ingresar
           </a>
+          <InstallAppButton className="mt-2 w-full" />
           <LinkButton href="/registro" className="mt-2 w-full">
             Comenzar gratis
           </LinkButton>

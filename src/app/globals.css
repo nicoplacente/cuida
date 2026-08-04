@@ -37,6 +37,22 @@ textarea {
   font: inherit;
 }
 
+input,
+select,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"] {
+  display: block;
+  width: 100%;
+}
+
 button,
 a,
 input,

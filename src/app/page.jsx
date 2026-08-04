@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { InstallAppButton } from "@/components/install-app-button";
 import { LandingFooter } from "@/components/landing-footer";
 import { MobileLandingNavigation } from "@/components/mobile-landing-navigation";
 import { Badge, Card, LinkButton, SectionTitle, Shell } from "@/components/ui";
@@ -57,7 +58,7 @@ export default function Home() {
             />
             <span className="text-xl tracking-[-0.02em]">Cuida</span>
           </a>
-          <nav className="hidden items-center gap-6 text-sm font-semibold text-[color:var(--care-ink-soft)] md:flex">
+          <nav className="hidden items-center gap-5 text-sm font-semibold text-[color:var(--care-ink-soft)] lg:flex">
             <a href="#solucion" className="hover:text-[color:var(--care-ink)]">
               Solución
             </a>
@@ -75,6 +76,7 @@ export default function Home() {
                 Donar
               </a>
             ) : null}
+            <InstallAppButton className="whitespace-nowrap" />
             <a href="/login" className="hover:text-[color:var(--care-ink)]">
               Ingresar
             </a>

@@ -7,8 +7,9 @@ import { SecondaryLink } from "@/components/ui";
 import { NotificationCenter } from "@/components/notification-center";
 import { LogoutIcon } from "@/components/icons/logout-icon";
 import { MenuIcon } from "@/components/icons/menu-icon";
-import { ToastForm } from "@/components/toast-form";
+import { InstallAppButton } from "@/components/install-app-button";
 import { SessionKeeper } from "@/components/session-keeper";
+import { ToastForm } from "@/components/toast-form";
 import { prisma } from "@/services/db";
 
 const navigation = [
@@ -79,35 +80,36 @@ export async function AppShell({ children }) {
               publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""}
             />
             <div className="hidden items-center gap-3 lg:flex">
-            {user.memberships.length > 1 ? (
-              <CareCircleSwitcher
-                action={switchCareCircleAction}
-                careCircles={careCircleOptions}
-                activeCareCircleId={careCircle?.id}
-              />
-            ) : null}
-            <SecondaryLink
-              href="/app/circulos/nuevo"
-              className="hidden min-h-10 px-4 py-2 text-sm sm:inline-flex"
-            >
-              Nuevo círculo
-            </SecondaryLink>
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold">{user.name}</p>
-              <p className="text-xs text-[color:var(--care-muted)]">
-                {patient?.name ? `Cuidando a ${patient.name}` : "Administrador"}
-              </p>
-            </div>
-            <ToastForm action={logoutAction}>
-              <button
-                aria-label="Cerrar sesión"
-                className="flex size-10 items-center justify-center rounded-full border border-[color:var(--care-cloud)] bg-white text-[color:var(--care-ink-soft)] transition hover:border-[color:var(--care-teal)] hover:text-[color:var(--care-ink)]"
-                title="Cerrar sesión"
-                type="submit"
+              <InstallAppButton />
+              {user.memberships.length > 1 ? (
+                <CareCircleSwitcher
+                  action={switchCareCircleAction}
+                  careCircles={careCircleOptions}
+                  activeCareCircleId={careCircle?.id}
+                />
+              ) : null}
+              <SecondaryLink
+                href="/app/circulos/nuevo"
+                className="hidden min-h-10 px-4 py-2 text-sm sm:inline-flex"
               >
-                <LogoutIcon />
-              </button>
-            </ToastForm>
+                Nuevo círculo
+              </SecondaryLink>
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-semibold">{user.name}</p>
+                <p className="text-xs text-[color:var(--care-muted)]">
+                  {patient?.name ? `Cuidando a ${patient.name}` : "Administrador"}
+                </p>
+              </div>
+              <ToastForm action={logoutAction}>
+                <button
+                  aria-label="Cerrar sesión"
+                  className="flex size-10 items-center justify-center rounded-full border border-[color:var(--care-cloud)] bg-white text-[color:var(--care-ink-soft)] transition hover:border-[color:var(--care-teal)] hover:text-[color:var(--care-ink)]"
+                  title="Cerrar sesión"
+                  type="submit"
+                >
+                  <LogoutIcon />
+                </button>
+              </ToastForm>
             </div>
 
             <details name="app-header-popover" className="group relative lg:hidden">
@@ -153,6 +155,7 @@ export async function AppShell({ children }) {
                 </nav>
 
                 <div className="mt-3 grid gap-2 border-t border-[color:var(--care-cloud)] pt-3">
+                  <InstallAppButton className="w-full" />
                   <SecondaryLink href="/app/circulos/nuevo" className="min-h-10 px-4 py-2 text-sm">
                     Nuevo círculo
                   </SecondaryLink>
@@ -188,7 +191,7 @@ export async function AppShell({ children }) {
           </nav>
         </aside>
 
-        <main>{children}</main>
+        <main className="min-w-0">{children}</main>
       </div>
     </div>
   );
