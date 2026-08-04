@@ -36,56 +36,64 @@ export function getScheduledInstant(dateKey, time) {
   return new Date(`${dateKey}T${time || "00:00"}:00${APP_TIME_ZONE_OFFSET}`);
 }
 
-function getRecipientsByCircle(memberships) {
-  return memberships.reduce((recipients, membership) => {
-    const current = recipients.get(membership.careCircleId) || [];
-    current.push(membership.userId);
-    recipients.set(membership.careCircleId, current);
-    return recipients;
-  }, new Map());
+export function getCareContextsByCircle(memberships) {
+  const contexts = new Map();
+
+  for (const membership of memberships) {
+    const current = contexts.get(membership.careCircleId) || {
+      patientName: membership.careCircle.patient?.name || membership.careCircle.name,
+      recipientIds: [],
+    };
+    current.recipientIds.push(membership.userId);
+    contexts.set(membership.careCircleId, current);
+  }
+
+  return contexts;
 }
 
 export function buildNotification({
   type,
   kind = "REMINDER",
   source,
+  patientName,
   userId,
   dateKey,
   occurrenceLabel,
   occurrenceTime,
   reminderMinutes,
 }) {
+  const careSubject = patientName || "la persona cuidada";
   const reminderContent = {
     MEDICATION: {
-      title: "Momento de la medicación",
-      message: `${source.name} ${source.dose} está programado para las ${occurrenceLabel}.`,
+      title: "Momento de la medicación en Cuida",
+      message: `Para ${careSubject}: ${source.name} ${source.dose} está programado para las ${occurrenceLabel}.`,
       url: "/app/medicamentos",
     },
     TASK: {
-      title: "Tarea pendiente",
-      message: `${source.title} está programada para las ${source.scheduledTime}.`,
+      title: source.title,
+      message: `Para ${careSubject}: esta tarea está programada para las ${source.scheduledTime}.`,
       url: "/app/tareas",
     },
     EVENT: {
-      title: "Evento programado",
-      message: `${source.title} comienza a las ${source.time}.`,
+      title: source.title,
+      message: `Para ${careSubject}: este evento comienza a las ${source.time}.`,
       url: "/app/calendario",
     },
   }[type];
   const missedContent = {
     MEDICATION: {
-      title: "Medicamento sin administrar",
-      message: `${source.name} ${source.dose} debía administrarse a las ${occurrenceLabel} y continúa pendiente.`,
+      title: "Medicamento sin administrar en Cuida",
+      message: `Para ${careSubject}: ${source.name} ${source.dose} debía administrarse a las ${occurrenceLabel} y continúa pendiente una hora después.`,
       url: "/app/medicamentos",
     },
     TASK: {
-      title: "Tarea sin realizar",
-      message: `${source.title} debía realizarse a las ${source.scheduledTime} y continúa pendiente.`,
+      title: source.title,
+      message: `Para ${careSubject}: esta tarea debía realizarse a las ${source.scheduledTime} y continúa pendiente una hora después.`,
       url: "/app/tareas",
     },
     EVENT: {
-      title: "Evento sin registrar",
-      message: `${source.title} estaba programado para las ${source.time} y continúa pendiente.`,
+      title: source.title,
+      message: `Para ${careSubject}: este evento debía realizarse a las ${source.time} y continúa pendiente una hora después.`,
       url: "/app/calendario",
     },
   }[type];
@@ -118,6 +126,7 @@ function appendOccurrenceNotifications({
   notifications,
   type,
   source,
+  patientName,
   dateKey,
   occurrenceLabel,
   occurrenceTime,
@@ -131,6 +140,7 @@ function appendOccurrenceNotifications({
         buildNotification({
           type,
           source,
+          patientName,
           userId,
           dateKey,
           occurrenceLabel,
@@ -147,6 +157,7 @@ function appendOccurrenceNotifications({
         type,
         kind: "MISSED",
         source,
+        patientName,
         userId,
         dateKey,
         occurrenceLabel,
@@ -169,7 +180,16 @@ export async function materializeUpcomingNotifications(now = new Date()) {
   const [memberships, medications, tasks, events] = await Promise.all([
     prisma.careCircleMember.findMany({
       where: { role: { in: ["ADMIN", "CAREGIVER"] } },
-      select: { careCircleId: true, userId: true },
+      select: {
+        careCircleId: true,
+        userId: true,
+        careCircle: {
+          select: {
+            name: true,
+            patient: { select: { name: true } },
+          },
+        },
+      },
     }),
     prisma.medication.findMany({
       where: { active: true },
@@ -226,7 +246,7 @@ export async function materializeUpcomingNotifications(now = new Date()) {
     }),
   ]);
 
-  const recipientsByCircle = getRecipientsByCircle(memberships);
+  const careContextsByCircle = getCareContextsByCircle(memberships);
   const eligibleUsers = new Set(memberships.map((membership) => membership.userId));
   const notifications = [];
 
@@ -244,11 +264,13 @@ export async function materializeUpcomingNotifications(now = new Date()) {
       const wasAdministered = administeredTimestamps.has(occurrence.scheduledFor.getTime());
 
       if (wasAdministered) continue;
-      const recipients = recipientsByCircle.get(medication.careCircleId) || [];
+      const careContext = careContextsByCircle.get(medication.careCircleId);
+      const recipients = careContext?.recipientIds || [];
       appendOccurrenceNotifications({
         notifications,
         type: "MEDICATION",
         source: medication,
+        patientName: careContext?.patientName,
         dateKey: occurrence.dateKey,
         occurrenceLabel: occurrence.time,
         occurrenceTime: occurrence.scheduledFor,
@@ -261,29 +283,33 @@ export async function materializeUpcomingNotifications(now = new Date()) {
 
   for (const task of tasks) {
     const dateKey = getStoredDateKey(task.scheduledDate);
+    const careContext = careContextsByCircle.get(task.careCircleId);
     const reminderRecipients = task.assignedToId && eligibleUsers.has(task.assignedToId)
       ? [task.assignedToId]
-      : recipientsByCircle.get(task.careCircleId) || [];
+      : careContext?.recipientIds || [];
     appendOccurrenceNotifications({
       notifications,
       type: "TASK",
       source: task,
+      patientName: careContext?.patientName,
       dateKey,
       occurrenceLabel: task.scheduledTime,
       occurrenceTime: getScheduledInstant(dateKey, task.scheduledTime),
       reminderRecipients,
-      missedRecipients: recipientsByCircle.get(task.careCircleId) || [],
+      missedRecipients: careContext?.recipientIds || [],
       now,
     });
   }
 
   for (const event of events) {
     const dateKey = getStoredDateKey(event.date);
-    const recipients = recipientsByCircle.get(event.careCircleId) || [];
+    const careContext = careContextsByCircle.get(event.careCircleId);
+    const recipients = careContext?.recipientIds || [];
     appendOccurrenceNotifications({
       notifications,
       type: "EVENT",
       source: event,
+      patientName: careContext?.patientName,
       dateKey,
       occurrenceLabel: event.time,
       occurrenceTime: getScheduledInstant(dateKey, event.time),
@@ -333,6 +359,7 @@ async function sendToSubscription(subscription, notification) {
     body: notification.message,
     icon: "/cuida-icon-192.png",
     badge: "/cuida-badge-96.png",
+    lang: "es-AR",
     url: notification.url,
     notificationId: notification.id,
     timestamp: notification.scheduledFor.getTime(),
@@ -404,15 +431,4 @@ export async function deliverDueNotifications(now = new Date()) {
   }
 
   return delivered;
-}
-
-export async function cancelPendingNotifications(type, sourceId, options = {}) {
-  return prisma.notification.deleteMany({
-    where: {
-      type,
-      sourceId,
-      sentAt: null,
-      ...(options.occurrenceFor ? { occurrenceFor: options.occurrenceFor } : {}),
-    },
-  });
 }

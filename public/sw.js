@@ -26,6 +26,7 @@ self.addEventListener("push", (event) => {
       body: data.body,
       icon: data.icon || "/cuida-icon-192.png",
       badge: data.badge || "/cuida-badge-96.png",
+      lang: data.lang || "es-AR",
       tag: notificationId,
       renotify: Boolean(notificationId),
       silent: false,

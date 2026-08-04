@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/services/db";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
-import { cancelPendingNotifications } from "@/services/notifications";
 import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField, isValidTimeInput, parseDateInput } from "@/utils/form-data";
 import { getMedicationOccurrences } from "@/utils/medication-schedules";
@@ -222,16 +221,27 @@ export async function administerMedicationAction(_previousState, formData) {
       return actionError("Esta toma ya fue marcada como administrada.");
     }
 
-    await prisma.medicationAdministration.create({
-      data: { medicationId, userId: user.id, scheduledFor },
-    });
-    await cancelPendingNotifications("MEDICATION", medicationId, { occurrenceFor: scheduledFor });
-    await createActivity({
-      careCircleId: careCircle.id,
-      userId: user.id,
-      type: "MEDICATION_ADMINISTERED",
-      message: `${user.name} administró ${medication.name} ${medication.dose}.`,
-    });
+    await prisma.$transaction([
+      prisma.medicationAdministration.create({
+        data: { medicationId, userId: user.id, scheduledFor },
+      }),
+      prisma.notification.deleteMany({
+        where: {
+          type: "MEDICATION",
+          sourceId: medicationId,
+          occurrenceFor: scheduledFor,
+          sentAt: null,
+        },
+      }),
+      prisma.activity.create({
+        data: {
+          careCircleId: careCircle.id,
+          userId: user.id,
+          type: "MEDICATION_ADMINISTERED",
+          message: `${user.name} administró ${medication.name} ${medication.dose}.`,
+        },
+      }),
+    ]);
 
     revalidateMedicationPaths();
     return actionSuccess("Administración registrada correctamente.");
@@ -249,12 +259,23 @@ export async function toggleMedicationAction(_previousState, formData) {
       return actionError("No tenés permisos para modificar este medicamento.");
     }
 
-    const medication = await prisma.medication.updateMany({
-      where: { id: medicationId, careCircleId: careCircle.id },
-      data: { active },
+    const medicationWasUpdated = await prisma.$transaction(async (transaction) => {
+      const medication = await transaction.medication.updateMany({
+        where: { id: medicationId, careCircleId: careCircle.id },
+        data: { active },
+      });
+
+      if (medication.count !== 1) return false;
+
+      if (!active) {
+        await transaction.notification.deleteMany({
+          where: { type: "MEDICATION", sourceId: medicationId, sentAt: null },
+        });
+      }
+
+      return true;
     });
-    if (medication.count !== 1) return actionError("El medicamento no está disponible.");
-    if (!active) await cancelPendingNotifications("MEDICATION", medicationId);
+    if (!medicationWasUpdated) return actionError("El medicamento no está disponible.");
 
     revalidateMedicationPaths();
     return actionSuccess(active ? "Medicamento activado." : "Medicamento desactivado.");

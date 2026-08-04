@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildNotification,
+  getCareContextsByCircle,
   getNotificationDateKey,
   getScheduledInstant,
   validateNotificationEnvironment,
@@ -34,6 +35,7 @@ test("mantiene separadas la hora del evento y la hora del aviso", () => {
       title: "Consulta neurológica",
       time: "16:00",
     },
+    patientName: "María",
     userId: "user-1",
     dateKey: "2026-07-28",
     occurrenceLabel: "16:00",
@@ -41,7 +43,11 @@ test("mantiene separadas la hora del evento y la hora del aviso", () => {
     reminderMinutes: 30,
   });
 
-  assert.equal(notification.message, "Consulta neurológica comienza a las 16:00.");
+  assert.equal(notification.title, "Consulta neurológica");
+  assert.equal(
+    notification.message,
+    "Para María: este evento comienza a las 16:00.",
+  );
   assert.equal(notification.scheduledFor.toISOString(), "2026-07-28T18:30:00.000Z");
   assert.equal(
     notification.occurrenceKey,
@@ -60,6 +66,7 @@ test("programa el aviso de incumplimiento una hora después", () => {
       title: "Consulta neurológica",
       time: "16:00",
     },
+    patientName: "María",
     userId: "user-1",
     dateKey: "2026-07-28",
     occurrenceLabel: "16:00",
@@ -74,6 +81,143 @@ test("programa el aviso de incumplimiento una hora después", () => {
     notification.occurrenceKey,
     "EVENT:MISSED:event-1:2026-07-28:16:00:60",
   );
+});
+
+test("genera títulos y descripciones para los seis tipos de aviso", () => {
+  const cases = [
+    {
+      type: "MEDICATION",
+      kind: "REMINDER",
+      source: {
+        id: "medication-1",
+        careCircleId: "circle-1",
+        name: "Autogena",
+        dose: "100 mg",
+      },
+      time: "23:50",
+      title: "Momento de la medicación en Cuida",
+      message: "Para María: Autogena 100 mg está programado para las 23:50.",
+    },
+    {
+      type: "MEDICATION",
+      kind: "MISSED",
+      source: {
+        id: "medication-1",
+        careCircleId: "circle-1",
+        name: "Autogena",
+        dose: "100 mg",
+      },
+      time: "23:50",
+      title: "Medicamento sin administrar en Cuida",
+      message:
+        "Para María: Autogena 100 mg debía administrarse a las 23:50 y continúa pendiente una hora después.",
+    },
+    {
+      type: "TASK",
+      kind: "REMINDER",
+      source: {
+        id: "task-1",
+        careCircleId: "circle-1",
+        title: "Preparar la cena",
+        scheduledTime: "20:00",
+      },
+      time: "20:00",
+      title: "Preparar la cena",
+      message: "Para María: esta tarea está programada para las 20:00.",
+    },
+    {
+      type: "TASK",
+      kind: "MISSED",
+      source: {
+        id: "task-1",
+        careCircleId: "circle-1",
+        title: "Preparar la cena",
+        scheduledTime: "20:00",
+      },
+      time: "20:00",
+      title: "Preparar la cena",
+      message:
+        "Para María: esta tarea debía realizarse a las 20:00 y continúa pendiente una hora después.",
+    },
+    {
+      type: "EVENT",
+      kind: "REMINDER",
+      source: {
+        id: "event-1",
+        careCircleId: "circle-1",
+        title: "Consulta neurológica",
+        time: "16:00",
+      },
+      time: "16:00",
+      title: "Consulta neurológica",
+      message: "Para María: este evento comienza a las 16:00.",
+    },
+    {
+      type: "EVENT",
+      kind: "MISSED",
+      source: {
+        id: "event-1",
+        careCircleId: "circle-1",
+        title: "Consulta neurológica",
+        time: "16:00",
+      },
+      time: "16:00",
+      title: "Consulta neurológica",
+      message:
+        "Para María: este evento debía realizarse a las 16:00 y continúa pendiente una hora después.",
+    },
+  ];
+
+  for (const item of cases) {
+    const occurrenceTime = getScheduledInstant("2026-07-28", item.time);
+    const notification = buildNotification({
+      type: item.type,
+      kind: item.kind,
+      source: item.source,
+      patientName: "María",
+      userId: "user-1",
+      dateKey: "2026-07-28",
+      occurrenceLabel: item.time,
+      occurrenceTime,
+      reminderMinutes: 30,
+    });
+
+    assert.equal(notification.title, item.title);
+    assert.equal(notification.message, item.message);
+    assert.equal(
+      notification.scheduledFor.getTime(),
+      occurrenceTime.getTime() + (item.kind === "MISSED" ? 60 : -30) * 60 * 1000,
+    );
+  }
+});
+
+test("asocia destinatarios y paciente por círculo con un respaldo legible", () => {
+  const contexts = getCareContextsByCircle([
+    {
+      careCircleId: "circle-1",
+      userId: "user-1",
+      careCircle: { name: "Familia Pérez", patient: { name: "María" } },
+    },
+    {
+      careCircleId: "circle-1",
+      userId: "user-2",
+      careCircle: { name: "Familia Pérez", patient: { name: "María" } },
+    },
+    {
+      careCircleId: "circle-2",
+      userId: "user-1",
+      careCircle: { name: "Círculo de apoyo", patient: null },
+    },
+  ]);
+
+  assert.deepEqual(contexts.get("circle-1"), {
+    patientName: "María",
+    recipientIds: ["user-1", "user-2"],
+  });
+  assert.deepEqual(contexts.get("circle-2"), {
+    patientName: "Círculo de apoyo",
+    recipientIds: ["user-1"],
+  });
 });
 
 test("no enumera variables faltantes en errores de configuración", () => {

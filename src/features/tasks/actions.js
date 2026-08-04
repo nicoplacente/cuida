@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/services/db";
 import { requireCareContext } from "@/services/care-circle";
 import { createActivity } from "@/services/activity";
-import { cancelPendingNotifications } from "@/services/notifications";
 import { actionError, actionSuccess } from "@/utils/action-result";
 import { getFormField, isValidTimeInput, parseDateInput } from "@/utils/form-data";
 import { parseReminderMinutes } from "@/utils/reminders";
@@ -170,22 +169,32 @@ export async function completeTaskAction(_previousState, formData) {
       return actionError("No pudimos identificar la tarea.");
     }
 
-    const task = await prisma.careTask.updateMany({
-      where: { id: taskId, careCircleId: careCircle.id, completed: false },
-      data: { completed: true, completedById: user.id, completedAt: new Date() },
+    const taskWasCompleted = await prisma.$transaction(async (transaction) => {
+      const task = await transaction.careTask.updateMany({
+        where: { id: taskId, careCircleId: careCircle.id, completed: false },
+        data: { completed: true, completedById: user.id, completedAt: new Date() },
+      });
+
+      if (task.count !== 1) return false;
+
+      await transaction.notification.deleteMany({
+        where: { type: "TASK", sourceId: taskId, sentAt: null },
+      });
+      await transaction.activity.create({
+        data: {
+          careCircleId: careCircle.id,
+          userId: user.id,
+          type: "TASK_COMPLETED",
+          message: `${user.name} completó una tarea compartida.`,
+        },
+      });
+
+      return true;
     });
 
-    if (task.count !== 1) {
+    if (!taskWasCompleted) {
       return actionError("La tarea ya fue completada o no está disponible.");
     }
-
-    await cancelPendingNotifications("TASK", taskId);
-    await createActivity({
-      careCircleId: careCircle.id,
-      userId: user.id,
-      type: "TASK_COMPLETED",
-      message: `${user.name} completó una tarea compartida.`,
-    });
 
     revalidatePath("/app");
     revalidatePath("/app/tareas");

@@ -58,6 +58,7 @@ test("solicita sonido y vibración para las notificaciones Push", async () => {
 
   assert.equal(displayedNotifications.length, 1);
   assert.equal(displayedNotifications[0].options.silent, false);
+  assert.equal(displayedNotifications[0].options.lang, "es-AR");
   assert.deepEqual(
     Array.from(displayedNotifications[0].options.vibrate),
     [200, 100, 200],
