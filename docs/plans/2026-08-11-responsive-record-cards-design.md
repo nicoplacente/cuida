@@ -6,23 +6,25 @@ Evitar que los textos largos desplacen o desorganicen las acciones de Tareas, Ca
 
 ## Patrón visual
 
-Cada tarjeta tendrá tres zonas independientes:
+Cada tarjeta tendrá cuatro zonas independientes:
 
-1. Un encabezado estable con indicadores breves y acciones.
-2. Un cuerpo de contenido a ancho completo.
-3. Una sección inferior opcional para información secundaria, como las tomas del día.
+1. Una primera fila estable con todos los metadatos e indicadores breves.
+2. Una segunda fila con todas las acciones alineadas al inicio.
+3. Un cuerpo de contenido a ancho completo.
+4. Una sección inferior opcional para información secundaria, como las tomas del día.
 
-Las acciones permanecerán en la parte superior y se acomodarán entre sí cuando el ancho sea reducido. El contenido largo no participará de esa misma fila, por lo que no podrá empujar las acciones hacia abajo ni quedar limitado a una columna angosta.
+Las acciones permanecerán en una fila propia, antes del contenido, y se acomodarán entre sí cuando el ancho sea reducido. El contenido largo no participará de esa fila, por lo que no podrá empujar las acciones ni quedar limitado a una columna angosta.
 
 ## Componente compartido
 
-Se creará un componente visual pequeño para reutilizar la estructura de tarjeta. Recibirá nodos para el encabezado, las acciones, el cuerpo y, cuando corresponda, el contenido inferior. No contendrá lógica de negocio ni estado y podrá utilizarse desde Server Components.
+Se creará un componente visual pequeño para reutilizar la estructura de tarjeta. Recibirá nodos para los metadatos, las acciones, el cuerpo y, cuando corresponda, el contenido inferior. No contendrá lógica de negocio ni estado y podrá utilizarse desde Server Components.
 
 El componente aplicará:
 
 - ancho mínimo cero en las zonas flexibles;
 - ajuste de palabras largas;
-- acciones agrupadas y alineadas al inicio o al final según el espacio disponible;
+- acciones agrupadas y siempre alineadas al inicio de su propia fila;
+- botones de acción compactos únicamente en anchos móviles;
 - separación visual consistente entre encabezado, cuerpo y contenido inferior;
 - crecimiento vertical natural, sin límites de líneas.
 
@@ -30,23 +32,23 @@ El componente aplicará:
 
 ### Tareas
 
-El encabezado mostrará fecha, horario, recordatorio y estado junto con las acciones. El cuerpo mostrará título, descripción y responsable usando todo el ancho.
+La primera fila mostrará fecha, horario, recordatorio y estado. La segunda contendrá las acciones y, si corresponde, la etiqueta `Completada por…`. El cuerpo mostrará título, descripción y responsable usando todo el ancho.
 
 ### Calendario
 
-El encabezado mostrará fecha, horario, recordatorio y estado junto con las acciones. El cuerpo mostrará título, ubicación y notas a ancho completo.
+La primera fila mostrará fecha, horario, recordatorio y estado. La segunda contendrá las acciones y, si corresponde, la etiqueta `Realizado por…`. El cuerpo mostrará título, ubicación y notas a ancho completo.
 
 ### Historial
 
-El encabezado mostrará fecha, horario, tipo y autor junto con las acciones. El contenido del registro ocupará todo el ancho inferior.
+La primera fila mostrará fecha, horario, tipo y autor. La segunda contendrá las acciones. El contenido del registro ocupará todo el ancho inferior.
 
 ### Medicamentos
 
-El encabezado conservará estado, frecuencia, recordatorio y acciones. El cuerpo mostrará nombre, vigencia e indicaciones a ancho completo. La sección `Tomas de hoy` permanecerá debajo, separada por un borde.
+La primera fila conservará estado, frecuencia y recordatorio. La segunda contendrá las acciones. El cuerpo mostrará nombre, vigencia e indicaciones a ancho completo. La sección `Tomas de hoy` permanecerá debajo, separada por un borde.
 
 ## Responsive y accesibilidad
 
-En pantallas amplias, indicadores y acciones compartirán el encabezado con una alineación clara. En pantallas angostas, ambos grupos podrán envolver líneas sin superponerse. Los botones conservarán sus tamaños táctiles, estados de foco y etiquetas actuales.
+En pantallas amplias, los metadatos ocuparán la primera fila y las acciones comenzarán desde el borde izquierdo de la segunda. En pantallas angostas, las acciones podrán mantenerse una al lado de otra o envolver líneas sin superponerse. Los botones reducirán moderadamente su altura, tipografía y padding solo en móvil, manteniendo un área táctil utilizable, sus estados de foco y sus etiquetas actuales.
 
 Todo el contenido se mostrará completo. Los textos usarán envoltura de palabras para evitar desbordes horizontales, incluidas cadenas extensas sin espacios.
 
