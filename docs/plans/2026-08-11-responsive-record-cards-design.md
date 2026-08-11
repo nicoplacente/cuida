@@ -44,7 +44,7 @@ La primera fila mostrará fecha, horario, tipo y autor. En móvil, fecha y horar
 
 ### Medicamentos
 
-La primera fila conservará estado, frecuencia y recordatorio. En móvil, estado y frecuencia compartirán la línea principal y el recordatorio ocupará una línea secundaria. La segunda contendrá las acciones; en móvil, los tres botones serán compactos y tendrán el mismo ancho. El cuerpo mostrará nombre, vigencia e indicaciones a ancho completo. La sección `Tomas de hoy` permanecerá debajo, separada por un borde.
+La primera fila conservará estado, frecuencia y recordatorio. En móvil, estado y frecuencia compartirán la línea principal y el recordatorio ocupará una línea secundaria. La segunda contendrá las acciones; en móvil, `Desactivar` o `Activar` ocupará todo el ancho superior y `Editar` y `Eliminar` compartirán una fila inferior con el mismo ancho. Esta jerarquía evitará que la etiqueta más larga desborde su contenedor. El cuerpo mostrará nombre, vigencia e indicaciones a ancho completo. La sección `Tomas de hoy` permanecerá debajo, separada por un borde.
 
 ## Responsive y accesibilidad
 
@@ -59,6 +59,7 @@ Todo el contenido se mostrará completo. Los textos usarán envoltura de palabra
 - Revisar las cuatro secciones con contenido breve y extenso.
 - Verificar anchos móviles equivalentes a las capturas y un ancho de escritorio.
 - Confirmar que los metadatos mantengan la jerarquía de dos líneas y que los botones móviles tengan anchos uniformes.
+- Confirmar que `Desactivar` y `Activar` no desborden en Medicamentos a ningún ancho móvil compatible.
 - Confirmar que las acciones permanezcan arriba y que el cuerpo utilice todo el ancho.
 - Ejecutar las pruebas existentes y el build de producción.
 - Preservar los cambios locales previos en Calendario e Historial.
