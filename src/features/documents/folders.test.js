@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  DEFAULT_DOCUMENT_FOLDERS,
   collectDescendantFolderIds,
   getFolderLocationKey,
   getFolderPath,
@@ -9,6 +10,12 @@ import {
   normalizeFolderName,
   validateFolderName,
 } from "./folders.js";
+
+test("mantiene Historia clínica como única carpeta predeterminada", () => {
+  assert.deepEqual(DEFAULT_DOCUMENT_FOLDERS, [
+    { name: "Historia clínica", systemKey: "MEDICAL_HISTORY" },
+  ]);
+});
 
 const folders = [
   { id: "personal", name: "Personal", parentId: null },

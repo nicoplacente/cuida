@@ -7,6 +7,7 @@ import { prisma } from "@/services/db";
 import {
   clearActiveCareCircleId,
   createSession,
+  getCurrentUser,
   setActiveCareCircleId,
 } from "@/services/auth";
 import { requireCareContext } from "@/services/care-circle";
@@ -18,8 +19,19 @@ import {
 import { getR2DeletionErrorMessage } from "@/services/r2";
 import { getAppUrl } from "@/utils/app-url";
 import { actionError, actionSuccess } from "@/utils/action-result";
-import { getFormField, isValidEmail } from "@/utils/form-data";
-import { hashPassword, isValidNewPassword, verifyPassword } from "@/utils/passwords";
+import { getCheckboxField, getFormField, isValidEmail } from "@/utils/form-data";
+import {
+  createInvitationExpiration,
+  getInvitationRoleLabel,
+  isInvitationExpired,
+  isValidInvitationToken,
+} from "@/utils/invitations";
+import {
+  hashPassword,
+  isValidNewPassword,
+  maximumPasswordLength,
+  verifyPassword,
+} from "@/utils/passwords";
 import { unexpectedActionError } from "@/utils/server-action-result";
 import {
   canLeaveCareCircle,
@@ -35,6 +47,7 @@ const roleLabels = {
 };
 
 class TeamValidationError extends Error {}
+class InvitationValidationError extends Error {}
 
 async function requireAdminMembership(userId, careCircleId) {
   const membership = await prisma.careCircleMember.findUnique({
@@ -48,6 +61,63 @@ async function requireAdminMembership(userId, careCircleId) {
   });
 
   return membership?.role === "ADMIN";
+}
+
+async function getAvailableInvitation(token) {
+  if (!isValidInvitationToken(token)) {
+    throw new InvitationValidationError("La invitación no es válida o fue cancelada.");
+  }
+
+  const invitation = await prisma.careInvitation.findUnique({
+    where: { token },
+    select: {
+      acceptedAt: true,
+      careCircleId: true,
+      expiresAt: true,
+      id: true,
+      role: true,
+    },
+  });
+
+  if (!invitation) {
+    throw new InvitationValidationError("La invitación no es válida o fue cancelada.");
+  }
+  if (invitation.acceptedAt) {
+    throw new InvitationValidationError("La invitación no es válida o fue cancelada.");
+  }
+  if (isInvitationExpired(invitation.expiresAt)) {
+    throw new InvitationValidationError("La invitación venció. Pedí un nuevo enlace.");
+  }
+
+  return invitation;
+}
+
+async function addInvitationMembership(invitation, user) {
+  return prisma.$transaction(async (transaction) => {
+    const result = await transaction.careCircleMember.createMany({
+      data: [
+        {
+          careCircleId: invitation.careCircleId,
+          role: invitation.role,
+          userId: user.id,
+        },
+      ],
+      skipDuplicates: true,
+    });
+
+    if (result.count) {
+      await transaction.activity.create({
+        data: {
+          careCircleId: invitation.careCircleId,
+          userId: user.id,
+          type: "INVITATION_ACCEPTED",
+          message: `${user.name} se sumó al equipo de cuidado.`,
+        },
+      });
+    }
+
+    return Boolean(result.count);
+  });
 }
 
 function revalidateTeam() {
@@ -78,8 +148,6 @@ async function selectNextCareCircle(userId, currentCareCircleId) {
 export async function createInvitationAction(_previousState, formData) {
   try {
     const { user, careCircle } = await requireCareContext();
-    const name = getFormField(formData, "name");
-    const email = getFormField(formData, "email").toLowerCase();
     const role = getFormField(formData, "role");
 
     if (!careCircle) {
@@ -90,37 +158,17 @@ export async function createInvitationAction(_previousState, formData) {
       return actionError("Solo un administrador puede invitar miembros.");
     }
 
-    if (!isValidEmail(email)) {
-      return actionError("Ingresá un email válido.");
-    }
-
     if (!allowedInviteRoles.has(role)) {
       return actionError("Seleccioná un rol válido para la invitación.");
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        memberships: {
-          where: { careCircleId: careCircle.id },
-          select: { id: true },
-        },
-      },
-    });
-
-    if (existingUser?.memberships.length) {
-      return actionError("Ese usuario ya pertenece a este círculo.");
-    }
-
     const token = randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = createInvitationExpiration();
 
     await prisma.careInvitation.create({
       data: {
         careCircleId: careCircle.id,
         invitedById: user.id,
-        email,
-        name: name || null,
         role,
         token,
         expiresAt,
@@ -131,14 +179,13 @@ export async function createInvitationAction(_previousState, formData) {
       careCircleId: careCircle.id,
       userId: user.id,
       type: "MEMBER_INVITED",
-      message: `${user.name} invitó a ${email} al equipo de cuidado.`,
+      message: `${user.name} creó un enlace de invitación para el rol de ${getInvitationRoleLabel(role).toLocaleLowerCase("es-AR")}.`,
     });
 
     revalidatePath("/app/equipo");
-    return actionSuccess("Invitación creada correctamente.", {
-      email,
-      name: name || email,
+    return actionSuccess("Enlace de invitación creado correctamente.", {
       link: `${getAppUrl()}/invitacion/${token}`,
+      roleLabel: getInvitationRoleLabel(role),
     });
   } catch (error) {
     return unexpectedActionError("createInvitationAction", error);
@@ -251,18 +298,18 @@ export async function revokeInvitationAction(_previousState, formData) {
 
     const invitation = await prisma.careInvitation.findFirst({
       where: {
+        acceptedAt: null,
         id: invitationId,
         careCircleId: careCircle.id,
-        acceptedAt: null,
       },
-      select: { email: true, id: true, name: true },
+      select: { id: true, role: true },
     });
 
     if (!invitation) {
       return actionError("La invitación ya no está pendiente.");
     }
 
-    const invitationName = invitation.name || invitation.email;
+    const invitationRole = getInvitationRoleLabel(invitation.role).toLocaleLowerCase("es-AR");
     await prisma.$transaction([
       prisma.careInvitation.delete({ where: { id: invitation.id } }),
       prisma.activity.create({
@@ -270,13 +317,13 @@ export async function revokeInvitationAction(_previousState, formData) {
           careCircleId: careCircle.id,
           userId: user.id,
           type: "INVITATION_REVOKED",
-          message: `${user.name} canceló la invitación de ${invitationName}.`,
+          message: `${user.name} canceló un enlace de invitación para el rol de ${invitationRole}.`,
         },
       }),
     ]);
 
     revalidateTeam();
-    return actionSuccess(`Se canceló la invitación de ${invitationName}.`);
+    return actionSuccess(`Se canceló el enlace para el rol de ${invitationRole}.`);
   } catch (error) {
     return unexpectedActionError("revokeInvitationAction", error);
   }
@@ -388,82 +435,120 @@ export async function deleteCareCircleAction(_previousState, _formData) {
 
 export async function acceptInvitationAction(_previousState, formData) {
   const token = getFormField(formData, "token");
-  const name = getFormField(formData, "name");
-  const password = getFormField(formData, "password");
 
-  if (!/^[a-f0-9]{64}$/.test(token)) {
-    return actionError("La invitación no es válida o ya fue utilizada.");
+  try {
+    const [invitation, user] = await Promise.all([
+      getAvailableInvitation(token),
+      getCurrentUser(),
+    ]);
+
+    if (!user) {
+      return actionError("Iniciá sesión o creá una cuenta para aceptar la invitación.");
+    }
+
+    await addInvitationMembership(invitation, user);
+    await setActiveCareCircleId(invitation.careCircleId);
+  } catch (error) {
+    if (error instanceof InvitationValidationError) {
+      return actionError(error.message);
+    }
+    return unexpectedActionError("acceptInvitationAction", error);
+  }
+
+  redirect("/app");
+}
+
+export async function loginWithInvitationAction(_previousState, formData) {
+  const token = getFormField(formData, "token");
+  const email = getFormField(formData, "email").toLowerCase();
+  const password = getFormField(formData, "password");
+  const persistent = getCheckboxField(formData, "rememberSession");
+
+  if (!isValidEmail(email) || !password || password.length > maximumPasswordLength) {
+    return actionError("Ingresá un email y una contraseña válidos.");
   }
 
   try {
-    const invitation = await prisma.careInvitation.findUnique({
-      where: { token },
-      include: { careCircle: true },
+    const invitation = await getAvailableInvitation(token);
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      return actionError("Email o contraseña incorrectos.");
+    }
+
+    await addInvitationMembership(invitation, user);
+    await createSession(user.id, invitation.careCircleId, { persistent });
+  } catch (error) {
+    if (error instanceof InvitationValidationError) {
+      return actionError(error.message);
+    }
+    return unexpectedActionError("loginWithInvitationAction", error);
+  }
+
+  redirect("/app");
+}
+
+export async function registerWithInvitationAction(_previousState, formData) {
+  const token = getFormField(formData, "token");
+  const name = getFormField(formData, "name");
+  const email = getFormField(formData, "email").toLowerCase();
+  const password = getFormField(formData, "password");
+
+  if (!name || !isValidEmail(email) || !isValidNewPassword(password)) {
+    return actionError(
+      "Completá los campos obligatorios. La contraseña debe tener entre 8 y 128 caracteres.",
+    );
+  }
+
+  try {
+    const invitation = await getAvailableInvitation(token);
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
     });
 
-    if (!invitation || invitation.acceptedAt) {
-      return actionError("La invitación no es válida o ya fue utilizada.");
+    if (existingUser) {
+      return actionError("Ya existe una cuenta con ese email. Iniciá sesión para continuar.");
     }
 
-    if (invitation.expiresAt < new Date()) {
-      return actionError("La invitación venció. Pedí una nueva invitación.");
-    }
-
-    let user = await prisma.user.findUnique({
-      where: { email: invitation.email },
-    });
-
-    if (user && !verifyPassword(password, user.passwordHash)) {
-      return actionError("La contraseña ingresada no es correcta.");
-    }
-
-    if (!user && (!name || !isValidNewPassword(password))) {
-      return actionError("Ingresá tu nombre y una contraseña de entre 8 y 128 caracteres.");
-    }
-
-    if (!user) {
-      user = await prisma.user.create({
+    const user = await prisma.$transaction(async (transaction) => {
+      const createdUser = await transaction.user.create({
         data: {
+          email,
           name,
-          email: invitation.email,
           passwordHash: hashPassword(password),
         },
+        select: { id: true, name: true },
       });
-    }
 
-    await prisma.$transaction([
-      prisma.careCircleMember.upsert({
-        where: {
-          userId_careCircleId: {
-            userId: user.id,
-            careCircleId: invitation.careCircleId,
-          },
-        },
-        update: { role: invitation.role },
-        create: {
-          userId: user.id,
-          careCircleId: invitation.careCircleId,
-          role: invitation.role,
-        },
-      }),
-      prisma.careInvitation.update({
-        where: { id: invitation.id },
-        data: { acceptedAt: new Date() },
-      }),
-      prisma.activity.create({
+      await transaction.careCircleMember.create({
         data: {
           careCircleId: invitation.careCircleId,
-          userId: user.id,
-          type: "INVITATION_ACCEPTED",
-          message: `${user.name} se sumó al equipo de cuidado.`,
+          role: invitation.role,
+          userId: createdUser.id,
         },
-      }),
-    ]);
+      });
+      await transaction.activity.create({
+        data: {
+          careCircleId: invitation.careCircleId,
+          userId: createdUser.id,
+          type: "INVITATION_ACCEPTED",
+          message: `${createdUser.name} se sumó al equipo de cuidado.`,
+        },
+      });
+
+      return createdUser;
+    });
 
     await createSession(user.id, invitation.careCircleId);
-    await setActiveCareCircleId(invitation.careCircleId);
   } catch (error) {
-    return unexpectedActionError("acceptInvitationAction", error);
+    if (error instanceof InvitationValidationError) {
+      return actionError(error.message);
+    }
+    if (error?.code === "P2002") {
+      return actionError("Ya existe una cuenta con ese email. Iniciá sesión para continuar.");
+    }
+    return unexpectedActionError("registerWithInvitationAction", error);
   }
 
   redirect("/app");

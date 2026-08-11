@@ -1,43 +1,25 @@
 import Image from "next/image";
-import { notFound } from "next/navigation";
-import { acceptInvitationAction } from "@/features/team/actions";
+import {
+  acceptInvitationAction,
+  loginWithInvitationAction,
+  registerWithInvitationAction,
+} from "@/features/team/actions";
+import { getCurrentUser } from "@/services/auth";
 import { prisma } from "@/services/db";
-import { PasswordField } from "@/components/password-field";
+import { InvitationAuthForms } from "@/components/invitation-auth-forms";
 import { SubmitButton, ToastForm } from "@/components/toast-form";
-import { StatusToast } from "@/components/status-toast";
-import { Card, Field, inputClassName } from "@/components/ui";
+import { Badge, Card } from "@/components/ui";
+import { formatShortDate, formatTime } from "@/utils/dates";
+import {
+  getInvitationRoleLabel,
+  isInvitationExpired,
+  isValidInvitationToken,
+} from "@/utils/invitations";
 
-export default async function InvitationPage({ params }) {
-  const { token } = await params;
-  if (!/^[a-f0-9]{64}$/.test(token)) {
-    notFound();
-  }
-
-  const invitation = await prisma.careInvitation.findUnique({
-    where: { token },
-    include: {
-      careCircle: {
-        include: {
-          patient: true,
-        },
-      },
-    },
-  });
-
-  if (!invitation) {
-    notFound();
-  }
-
-  const isExpired = invitation.expiresAt < new Date();
-  const isAccepted = Boolean(invitation.acceptedAt);
-  const existingUser = await prisma.user.findUnique({
-    where: { email: invitation.email },
-    select: { id: true, name: true },
-  });
-
+function UnavailableInvitation({ expired = false }) {
   return (
     <main className="grid min-h-screen place-items-center bg-[color:var(--care-canvas)] px-4 py-10">
-      <Card className="w-full max-w-xl p-6 sm:p-8">
+      <Card className="w-[min(100%,36rem)] p-6 sm:p-8">
         <div className="mb-8 flex items-center gap-3">
           <Image
             src="/cuida.png"
@@ -52,93 +34,130 @@ export default async function InvitationPage({ params }) {
               Invitación
             </p>
             <h1 className="text-2xl font-semibold tracking-[-0.02em]">
+              Invitación no disponible
+            </h1>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#fff4de] p-5">
+          <p className="font-semibold text-[color:var(--care-warning)]" role="alert">
+            {expired
+              ? "El enlace de invitación venció."
+              : "El enlace de invitación no es válido o fue cancelado."}
+          </p>
+          <p className="mt-2 text-sm text-[color:var(--care-ink-soft)]">
+            Pedí a quien administra el círculo de cuidado que genere un nuevo enlace.
+          </p>
+          <a
+            href="/login"
+            className="mt-4 inline-flex rounded-full bg-white px-5 py-3 text-sm font-semibold text-[color:var(--care-ink)] transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            Ir a iniciar sesión
+          </a>
+        </div>
+      </Card>
+    </main>
+  );
+}
+
+function InvitationSummary({ invitation, roleLabel }) {
+  return (
+    <div className="rounded-2xl border border-[color:var(--care-cloud)] bg-[color:var(--care-canvas)] p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-[color:var(--care-muted)]">
+            Grupo de cuidado
+          </p>
+          <p className="mt-1 text-lg font-semibold text-[color:var(--care-ink)]">
+            {invitation.careCircle.name}
+          </p>
+        </div>
+        <Badge tone="teal">{roleLabel}</Badge>
+      </div>
+      {invitation.careCircle.patient ? (
+        <p className="mt-3 text-sm text-[color:var(--care-ink-soft)]">
+          Persona cuidada: {invitation.careCircle.patient.name}
+        </p>
+      ) : null}
+      <p className="mt-2 text-sm font-semibold text-[color:var(--care-warning)]">
+        El enlace vence el {formatShortDate(invitation.expiresAt)} a las{" "}
+        {formatTime(invitation.expiresAt)}.
+      </p>
+    </div>
+  );
+}
+
+export default async function InvitationPage({ params }) {
+  const { token } = await params;
+  if (!isValidInvitationToken(token)) {
+    return <UnavailableInvitation />;
+  }
+
+  const invitation = await prisma.careInvitation.findUnique({
+    where: { token },
+    include: {
+      careCircle: {
+        include: {
+          patient: true,
+        },
+      },
+    },
+  });
+
+  if (!invitation) {
+    return <UnavailableInvitation />;
+  }
+  if (isInvitationExpired(invitation.expiresAt)) {
+    return <UnavailableInvitation expired />;
+  }
+
+  const currentUser = await getCurrentUser();
+  const roleLabel = getInvitationRoleLabel(invitation.role);
+
+  return (
+    <main className="grid min-h-screen place-items-center bg-[color:var(--care-canvas)] px-4 py-10">
+      <Card className="w-[min(100%,42rem)] p-6 sm:p-8">
+        <div className="mb-8 flex items-center gap-3">
+          <Image
+            src="/cuida.png"
+            alt="Logo de Cuida"
+            width={48}
+            height={48}
+            className="rounded-2xl"
+            priority
+          />
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--care-teal)]">
+              Invitación al equipo
+            </p>
+            <h1 className="text-2xl font-semibold tracking-[-0.02em]">
               Sumarte a {invitation.careCircle.name}
             </h1>
           </div>
         </div>
 
-        {isAccepted || isExpired ? (
-          <div className="rounded-2xl bg-[#fff4de] p-5">
-            <StatusToast
-              message={
-                isAccepted
-                  ? "Esta invitación ya fue utilizada."
-                  : "Esta invitación venció."
-              }
-              status="warning"
-            />
-            <p className="font-semibold text-[color:var(--care-warning)]">
-              {isAccepted
-                ? "Esta invitación ya fue utilizada."
-                : "Esta invitación expiró."}
-            </p>
-            <a
-              href="/login"
-              className="mt-4 inline-flex rounded-full bg-white px-5 py-3 text-sm font-semibold text-[color:var(--care-ink)]"
-            >
-              Ir a iniciar sesión
-            </a>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6 rounded-2xl bg-[#f8fbfd] p-5">
-              <p className="font-semibold text-[color:var(--care-ink)]">
-                Te invitaron como{" "}
-                {invitation.role === "OBSERVER" ? "observador" : "cuidador"}.
-              </p>
-              <p className="mt-2 text-sm text-[color:var(--care-muted)]">
-                Email: {invitation.email}
-              </p>
-              {existingUser ? (
-                <p className="mt-2 text-sm font-semibold text-[color:var(--care-ink-soft)]">
-                  Ya existe una cuenta con este email. Ingresá tu contraseña
-                  actual para sumar este círculo a tu cuenta.
-                </p>
-              ) : (
-                <p className="mt-2 text-sm font-semibold text-[color:var(--care-ink-soft)]">
-                  Creá tu cuenta para aceptar la invitación.
-                </p>
-              )}
-              {invitation.careCircle.patient ? (
-                <p className="mt-1 text-sm text-[color:var(--care-muted)]">
-                  Persona cuidada: {invitation.careCircle.patient.name}
-                </p>
-              ) : null}
-            </div>
+        <InvitationSummary invitation={invitation} roleLabel={roleLabel} />
 
-            <ToastForm action={acceptInvitationAction} className="grid gap-4">
+        {currentUser ? (
+          <div className="mt-6 rounded-2xl border border-[color:var(--care-cloud)] p-5 sm:p-6">
+            <h2 className="text-xl font-semibold">Continuar con tu cuenta</h2>
+            <p className="mt-2 text-sm text-[color:var(--care-ink-soft)]">
+              Vas a ingresar como {currentUser.name} ({currentUser.email}). Si ya
+              pertenecés al grupo, tu rol actual no cambiará.
+            </p>
+            <ToastForm action={acceptInvitationAction} className="mt-5" showStatus>
               <input type="hidden" name="token" value={token} />
-              <Field label="Nombre completo">
-                <input
-                  className={inputClassName}
-                  name="name"
-                  defaultValue={existingUser?.name || invitation.name || ""}
-                  readOnly={Boolean(existingUser)}
-                  required={!existingUser}
-                />
-              </Field>
-              <Field
-                label={
-                  existingUser ? "Contraseña de tu cuenta" : "Crear contraseña"
-                }
-                htmlFor="invitation-password"
-              >
-                <PasswordField
-                  id="invitation-password"
-                  name="password"
-                  autoComplete={
-                    existingUser ? "current-password" : "new-password"
-                  }
-                  minLength={existingUser ? undefined : 8}
-                  maxLength={128}
-                  required
-                />
-              </Field>
-              <SubmitButton pendingLabel="Aceptando…">
-                Aceptar invitación
+              <SubmitButton pendingLabel="Ingresando…" className="w-full sm:w-auto">
+                Ingresar al grupo
               </SubmitButton>
             </ToastForm>
-          </>
+          </div>
+        ) : (
+          <InvitationAuthForms
+            loginAction={loginWithInvitationAction}
+            registerAction={registerWithInvitationAction}
+            token={token}
+          />
         )}
       </Card>
     </main>

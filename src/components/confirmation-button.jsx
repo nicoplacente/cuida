@@ -13,6 +13,7 @@ export function ConfirmationButton({
   pendingLabel = "Procesando…",
   title,
   triggerLabel,
+  triggerClassName = "",
   triggerTitle,
   triggerTone = "danger",
 }) {
@@ -21,6 +22,7 @@ export function ConfirmationButton({
       eyebrow={eyebrow}
       title={title}
       triggerDisabled={disabled}
+      triggerClassName={triggerClassName}
       triggerLabel={triggerLabel}
       triggerTitle={triggerTitle}
       triggerTone={triggerTone}

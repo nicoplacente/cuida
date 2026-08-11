@@ -9,6 +9,12 @@ import { Badge, Card, EmptyState, Field, inputClassName } from "@/components/ui"
 import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
+import {
+  CareRecordAction,
+  CareRecordCard,
+  CareRecordMetaItem,
+  careRecordPrimaryActionClassName,
+} from "@/components/care-record-card";
 import { ReminderField } from "@/components/reminder-field";
 import { TaskEditButton } from "@/features/tasks/task-edit-button";
 import { formatShortDate, getScheduledDateForDay } from "@/utils/dates";
@@ -50,73 +56,87 @@ export default async function TasksPage() {
                   ? getScheduledDateForDay(task.scheduledDate, task.scheduledTime) < new Date()
                   : false;
                 return (
-                <article
+                <CareRecordCard
                   key={task.id}
-                  className="rounded-2xl border border-[color:var(--care-cloud)] bg-[#f8fbfd] p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold text-[color:var(--care-muted)]">
-                        {task.scheduledDate ? formatShortDate(task.scheduledDate) : "Sin fecha"}
-                        {task.scheduledTime ? ` · ${task.scheduledTime}` : " · Sin horario"}
-                      </p>
-                      <h3 className="mt-1 text-xl font-semibold">{task.title}</h3>
-                      {task.description ? (
-                        <p className="mt-2 text-sm text-[color:var(--care-ink-soft)]">
-                          {task.description}
+                  header={(
+                    <>
+                      <CareRecordMetaItem position="leading">
+                        <p className="text-sm font-semibold text-[color:var(--care-muted)]">
+                          {task.scheduledDate ? formatShortDate(task.scheduledDate) : "Sin fecha"}
+                          {task.scheduledTime ? ` · ${task.scheduledTime}` : " · Sin horario"}
                         </p>
-                      ) : null}
-                      <p className="mt-3 text-sm text-[color:var(--care-muted)]">
-                        Responsable: {task.assignedTo?.name || "Sin asignar"}
-                      </p>
-                      <Badge tone={task.reminderMinutes ? "teal" : "neutral"}>
-                        {formatReminderLabel(task.reminderMinutes)}
-                      </Badge>
-                      <div className="mt-2">
+                      </CareRecordMetaItem>
+                      <CareRecordMetaItem position="below">
+                        <Badge tone={task.reminderMinutes ? "teal" : "neutral"}>
+                          {formatReminderLabel(task.reminderMinutes)}
+                        </Badge>
+                      </CareRecordMetaItem>
+                      <CareRecordMetaItem position="trailing">
                         <Badge tone={task.completed ? "success" : isOverdue ? "warning" : "neutral"}>
                           {task.completed ? "Realizada" : isOverdue ? "Vencida" : "Pendiente"}
                         </Badge>
-                      </div>
-                    </div>
-                    {canManage ? (
-                    <div className="grid justify-items-end gap-2">
-                      <TaskEditButton
-                        members={members.map((member) => ({
-                          id: member.user.id,
-                          name: member.user.name,
-                        }))}
-                        task={{
-                          id: task.id,
-                          title: task.title,
-                          description: task.description,
-                          scheduledDate: task.scheduledDate
-                            ? task.scheduledDate.toISOString().slice(0, 10)
-                            : null,
-                          scheduledTime: task.scheduledTime,
-                          reminderMinutes: task.reminderMinutes,
-                          assignedToId: task.assignedToId,
-                        }}
-                      />
-                      {task.completed ? (
-                        <Badge tone="success">
-                          Completada por {task.completedBy?.name || "el equipo"}
-                        </Badge>
-                      ) : (
-                        <ToastForm action={completeTaskAction}>
-                          <input type="hidden" name="taskId" value={task.id} />
-                          <SubmitButton pendingLabel="Completando…">Completar</SubmitButton>
-                        </ToastForm>
-                      )}
-                      <ConfirmDeleteButton
-                        action={deleteTaskAction}
-                        description={`Se eliminará la tarea ${task.title} y sus avisos asociados.`}
-                        fields={{ taskId: task.id }}
-                        title={`Eliminar ${task.title}`}
-                      />
-                    </div>
-                    ) : null}
-                  </div>
-                </article>
+                      </CareRecordMetaItem>
+                    </>
+                  )}
+                  actions={canManage ? (
+                    <>
+                      <CareRecordAction>
+                        <TaskEditButton
+                          members={members.map((member) => ({
+                            id: member.user.id,
+                            name: member.user.name,
+                          }))}
+                          task={{
+                            id: task.id,
+                            title: task.title,
+                            description: task.description,
+                            scheduledDate: task.scheduledDate
+                              ? task.scheduledDate.toISOString().slice(0, 10)
+                              : null,
+                            scheduledTime: task.scheduledTime,
+                            reminderMinutes: task.reminderMinutes,
+                            assignedToId: task.assignedToId,
+                          }}
+                        />
+                      </CareRecordAction>
+                      <CareRecordAction primary>
+                        {task.completed ? (
+                          <Badge tone="success">
+                            Completada por {task.completedBy?.name || "el equipo"}
+                          </Badge>
+                        ) : (
+                          <ToastForm action={completeTaskAction}>
+                            <input type="hidden" name="taskId" value={task.id} />
+                            <SubmitButton
+                              className={careRecordPrimaryActionClassName}
+                              pendingLabel="Completando…"
+                            >
+                              Completar
+                            </SubmitButton>
+                          </ToastForm>
+                        )}
+                      </CareRecordAction>
+                      <CareRecordAction>
+                        <ConfirmDeleteButton
+                          action={deleteTaskAction}
+                          description={`Se eliminará la tarea ${task.title} y sus avisos asociados.`}
+                          fields={{ taskId: task.id }}
+                          title={`Eliminar ${task.title}`}
+                        />
+                      </CareRecordAction>
+                    </>
+                  ) : null}
+                >
+                  <h3 className="text-xl font-semibold">{task.title}</h3>
+                  {task.description ? (
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-[color:var(--care-ink-soft)]">
+                      {task.description}
+                    </p>
+                  ) : null}
+                  <p className="mt-3 text-sm text-[color:var(--care-muted)]">
+                    Responsable: {task.assignedTo?.name || "Sin asignar"}
+                  </p>
+                </CareRecordCard>
                 );
               })
             ) : (

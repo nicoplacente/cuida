@@ -3,47 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { CloseIcon } from "@/components/icons/close-icon";
 import { usePwaInstallation } from "@/components/pwa-registration";
-
-function getInstallGuide() {
-  const userAgent = window.navigator.userAgent;
-  const isIos =
-    /iPad|iPhone|iPod/i.test(userAgent) ||
-    (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
-
-  if (isIos) {
-    return {
-      intro: "Abrí Cuida en Safari y seguí estos pasos:",
-      steps: [
-        "Tocá el botón Compartir de Safari.",
-        "Elegí “Agregar a inicio”.",
-        "Activá “Abrir como aplicación”, si aparece, y confirmá con “Agregar”.",
-      ],
-      title: "Instalar Cuida en iPhone o iPad",
-    };
-  }
-
-  if (/Android/i.test(userAgent)) {
-    return {
-      intro: "Desde el menú de tu navegador:",
-      steps: [
-        "Abrí el menú de opciones del navegador.",
-        "Elegí “Instalar aplicación” o “Agregar a pantalla principal”.",
-        "Activá “Abrir como aplicación”, si aparece, y confirmá la instalación.",
-      ],
-      title: "Instalar Cuida en Android",
-    };
-  }
-
-  return {
-    intro: "Desde este navegador:",
-    steps: [
-      "Buscá el icono de instalación en la barra de direcciones o abrí el menú del navegador.",
-      "Elegí “Instalar Cuida” o “Instalar aplicación”.",
-      "Confirmá la instalación para abrir Cuida como una aplicación independiente.",
-    ],
-    title: "Instalar Cuida en este dispositivo",
-  };
-}
+import { getInstallGuide } from "@/utils/pwa-installation";
 
 export function InstallAppButton({ className = "" }) {
   const { isInstalled, isReady, promptInstall } = usePwaInstallation();

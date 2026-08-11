@@ -1,22 +1,29 @@
 import Image from "next/image";
+import { AppSetupAlert } from "@/components/app-setup-alert";
+import { DailyPlanRefresh } from "@/components/daily-plan-refresh";
+import { PageHeader } from "@/components/page-header";
+import { Badge, Card, EmptyState } from "@/components/ui";
+import { PatientEditButton } from "@/features/care-circles/patient-edit-button";
+import { getLogTypeLabel } from "@/features/timeline/log-types";
 import { requireCareContext } from "@/services/care-circle";
 import { getDashboardData } from "@/services/dashboard";
-import { Badge, Card, EmptyState } from "@/components/ui";
-import { PageHeader } from "@/components/page-header";
-import { formatTime } from "@/utils/dates";
+import { formatFullDate, formatTime } from "@/utils/dates";
 import { getPatientAge } from "@/utils/patients";
-import { PatientEditButton } from "@/features/care-circles/patient-edit-button";
 
 export default async function DashboardPage() {
   const { user, careCircle, patient, canManage } = await requireCareContext();
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
   if (!careCircle || !patient) {
     return (
-      <Card className="p-8">
-        <EmptyState title="Todavía no hay un círculo activo.">
-          Creá un círculo de cuidado para empezar a organizar la información.
-        </EmptyState>
-      </Card>
+      <>
+        <AppSetupAlert publicKey={publicKey} />
+        <Card className="p-8">
+          <EmptyState title="Todavía no hay un círculo activo.">
+            Creá un círculo de cuidado para empezar a organizar la información.
+          </EmptyState>
+        </Card>
+      </>
     );
   }
 
@@ -25,6 +32,8 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      <AppSetupAlert publicKey={publicKey} />
+      <DailyPlanRefresh refreshAt={data.nextDayStartsAt.toISOString()} />
       <PageHeader eyebrow="Dashboard" title={`Buenos días, ${user.name}.`}>
         Hoy {patient.name} tiene {data.pendingMedications}{" "}
         {data.pendingMedications === 1
@@ -72,9 +81,11 @@ export default async function DashboardPage() {
                 {canManage ? (
                   <div className="mt-4">
                     <PatientEditButton
+                      careCircleName={careCircle.name}
                       patient={{
                         name: patient.name,
-                        birthDate: patient.birthDate?.toISOString().slice(0, 10) || "",
+                        birthDate:
+                          patient.birthDate?.toISOString().slice(0, 10) || "",
                         medicalCondition: patient.medicalCondition,
                         importantNotes: patient.importantNotes,
                       }}
@@ -96,7 +107,7 @@ export default async function DashboardPage() {
             </Card>
             <Card className="p-5">
               <p className="text-sm font-semibold text-(--care-muted)">
-                Turnos de hoy
+                Eventos de hoy
               </p>
               <p className="mt-3 text-4xl font-semibold">
                 {data.events.length}
@@ -113,37 +124,32 @@ export default async function DashboardPage() {
           <Card className="p-6">
             <div className="mb-5 flex items-center justify-between gap-4">
               <h2 className="text-xl font-semibold">Plan del día</h2>
-              <Badge>{new Date().toLocaleDateString("es-AR")}</Badge>
+              <Badge>{formatFullDate(data.todayStart)}</Badge>
             </div>
             <div className="grid gap-3">
-              {data.medicationPlan.map(({ medication, occurrence, administration }) => {
-                return (
-                  <div
-                    key={`${medication.id}-${occurrence.scheduledFor.toISOString()}`}
-                    className="rounded-2xl border border-(--care-cloud) bg-[#f8fbfd] p-4"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-(--care-muted)">
-                          {occurrence.time}
+              {data.dailyPlan.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-(--care-cloud) bg-[#f8fbfd] p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-(--care-muted)">
+                        {item.timeLabel} · {item.typeLabel}
+                      </p>
+                      <p className="mt-1 text-lg font-semibold">{item.title}</p>
+                      {item.detail ? (
+                        <p className="mt-1 text-sm text-(--care-ink-soft)">
+                          {item.detail}
                         </p>
-                        <p className="text-lg font-semibold">
-                          {medication.name} {medication.dose}
-                        </p>
-                      </div>
-                      {administration ? (
-                        <Badge tone="success">
-                          Administrado por {administration.user.name}
-                        </Badge>
-                      ) : (
-                        <Badge tone="warning">Pendiente</Badge>
-                      )}
+                      ) : null}
                     </div>
+                    <Badge tone={item.statusTone}>{item.statusLabel}</Badge>
                   </div>
-                );
-              })}
-              {!data.medicationPlan.length ? (
-                <EmptyState title="No hay tomas programadas para hoy." />
+                </div>
+              ))}
+              {!data.dailyPlan.length ? (
+                <EmptyState title="No hay actividades planificadas para hoy." />
               ) : null}
             </div>
           </Card>
@@ -154,9 +160,12 @@ export default async function DashboardPage() {
               {data.logs.length ? (
                 data.logs.map((log) => (
                   <div key={log.id} className="rounded-2xl bg-[#f8fbfd] p-4">
-                    <p className="text-sm font-semibold text-[color:var(--care-muted)]">
-                      {formatTime(log.occurredAt)} · {log.user.name}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-[color:var(--care-muted)]">
+                        {formatTime(log.occurredAt)} · {log.user.name}
+                      </p>
+                      <Badge tone="teal">{getLogTypeLabel(log.type)}</Badge>
+                    </div>
                     <p className="mt-2">{log.content}</p>
                   </div>
                 ))

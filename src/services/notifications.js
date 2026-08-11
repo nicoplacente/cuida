@@ -353,8 +353,9 @@ export function configureWebPush() {
   webpush.setVapidDetails(subject, publicKey, privateKey);
 }
 
-async function sendToSubscription(subscription, notification) {
+async function sendToSubscription(subscription, notification, badgeCount) {
   const payload = JSON.stringify({
+    badgeCount,
     title: notification.title,
     body: notification.message,
     icon: "/cuida-icon-192.png",
@@ -400,6 +401,21 @@ export async function deliverDueNotifications(now = new Date()) {
     orderBy: { scheduledFor: "asc" },
     take: 50,
   });
+  const dueUserIds = [...new Set(due.map((notification) => notification.userId))];
+  const unreadCounts = dueUserIds.length
+    ? await prisma.notification.groupBy({
+        by: ["userId"],
+        where: {
+          userId: { in: dueUserIds },
+          readAt: null,
+          scheduledFor: { lte: now },
+        },
+        _count: { _all: true },
+      })
+    : [];
+  const unreadCountByUser = new Map(
+    unreadCounts.map((entry) => [entry.userId, entry._count._all]),
+  );
 
   let delivered = 0;
   for (const notification of due) {
@@ -417,8 +433,11 @@ export async function deliverDueNotifications(now = new Date()) {
     const subscriptions = await prisma.pushSubscription.findMany({
       where: { userId: notification.userId },
     });
+    const badgeCount = unreadCountByUser.get(notification.userId) || 0;
     const results = await Promise.all(
-      subscriptions.map((subscription) => sendToSubscription(subscription, notification)),
+      subscriptions.map((subscription) =>
+        sendToSubscription(subscription, notification, badgeCount),
+      ),
     );
     const successful = subscriptions.length === 0 || results.some(Boolean);
 

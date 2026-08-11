@@ -11,6 +11,12 @@ import { PageHeader } from "@/components/page-header";
 import { ReminderField } from "@/components/reminder-field";
 import { EventEditButton } from "@/features/calendar/event-edit-button";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
+import {
+  CareRecordAction,
+  CareRecordCard,
+  CareRecordMetaItem,
+  careRecordPrimaryActionClassName,
+} from "@/components/care-record-card";
 import { formatShortDate, getScheduledDateForDay } from "@/utils/dates";
 import { formatReminderLabel } from "@/utils/reminders";
 
@@ -43,66 +49,82 @@ export default async function CalendarPage() {
                 const isOverdue = !event.completed
                   && getScheduledDateForDay(event.date, event.time) < new Date();
                 return (
-                <article
+                <CareRecordCard
                   key={event.id}
-                  className="rounded-2xl border border-[color:var(--care-cloud)] bg-[#f8fbfd] p-4"
+                  header={(
+                    <>
+                      <CareRecordMetaItem position="leading">
+                        <p className="text-sm font-semibold text-[color:var(--care-muted)]">
+                          {formatShortDate(event.date)} · {event.time}
+                        </p>
+                      </CareRecordMetaItem>
+                      <CareRecordMetaItem position="below">
+                        <Badge tone={event.reminderMinutes ? "teal" : "neutral"}>
+                          {formatReminderLabel(event.reminderMinutes)}
+                        </Badge>
+                      </CareRecordMetaItem>
+                      <CareRecordMetaItem position="trailing">
+                        <Badge tone={event.completed ? "success" : isOverdue ? "warning" : "neutral"}>
+                          {event.completed ? "Realizado" : isOverdue ? "Vencido" : "Pendiente"}
+                        </Badge>
+                      </CareRecordMetaItem>
+                    </>
+                  )}
+                  actions={canManage ? (
+                    <>
+                      <CareRecordAction>
+                        <EventEditButton
+                          event={{
+                            id: event.id,
+                            title: event.title,
+                            date: event.date.toISOString().slice(0, 10),
+                            time: event.time,
+                            reminderMinutes: event.reminderMinutes,
+                            location: event.location,
+                            notes: event.notes,
+                          }}
+                        />
+                      </CareRecordAction>
+                      <CareRecordAction primary>
+                        {event.completed ? (
+                          <Badge tone="success">
+                            Realizado por {event.completedBy?.name || "el equipo"}
+                          </Badge>
+                        ) : (
+                          <ToastForm action={completeEventAction}>
+                            <input name="eventId" type="hidden" value={event.id} />
+                            <SubmitButton
+                              className={careRecordPrimaryActionClassName}
+                              pendingLabel="Registrando…"
+                            >
+                              Marcar como realizado
+                            </SubmitButton>
+                          </ToastForm>
+                        )}
+                      </CareRecordAction>
+                      <CareRecordAction>
+                        <ConfirmDeleteButton
+                          action={deleteEventAction}
+                          description={`Se eliminará el evento ${event.title} y sus avisos asociados.`}
+                          fields={{ eventId: event.id }}
+                          title={`Eliminar ${event.title}`}
+                        />
+                      </CareRecordAction>
+                    </>
+                  ) : null}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <Badge tone="teal">
-                        {formatShortDate(event.date)} · {event.time}
-                      </Badge>
-                      <Badge tone={event.reminderMinutes ? "teal" : "neutral"}>
-                        {formatReminderLabel(event.reminderMinutes)}
-                      </Badge>
-                      <Badge tone={event.completed ? "success" : isOverdue ? "warning" : "neutral"}>
-                        {event.completed ? "Realizado" : isOverdue ? "Vencido" : "Pendiente"}
-                      </Badge>
-                      <h3 className="mt-3 text-xl font-semibold">{event.title}</h3>
-                      {event.location ? (
-                        <p className="mt-2 text-sm font-semibold text-[color:var(--care-ink-soft)]">
-                          {event.location}
-                        </p>
-                      ) : null}
-                      {event.notes ? (
-                        <p className="mt-2 text-sm text-[color:var(--care-muted)]">
-                          {event.notes}
-                        </p>
-                      ) : null}
-                    </div>
-                    {canManage ? (
-                    <div className="grid justify-items-end gap-2">
-                    <EventEditButton
-                      event={{
-                        id: event.id,
-                        title: event.title,
-                        date: event.date.toISOString().slice(0, 10),
-                        time: event.time,
-                        reminderMinutes: event.reminderMinutes,
-                        location: event.location,
-                        notes: event.notes,
-                      }}
-                    />
-                    {event.completed ? (
-                      <p className="text-sm text-[color:var(--care-muted)]">
-                        Realizado por {event.completedBy?.name || "el equipo"}
-                      </p>
-                    ) : (
-                      <ToastForm action={completeEventAction}>
-                        <input name="eventId" type="hidden" value={event.id} />
-                        <SubmitButton pendingLabel="Registrando…">Marcar como realizado</SubmitButton>
-                      </ToastForm>
-                    )}
-                    <ConfirmDeleteButton
-                      action={deleteEventAction}
-                      description={`Se eliminará el evento ${event.title} y sus avisos asociados.`}
-                      fields={{ eventId: event.id }}
-                      title={`Eliminar ${event.title}`}
-                    />
-                    </div>
-                    ) : null}
-                  </div>
-                </article>
+                  <h3 className="text-xl font-semibold">{event.title}</h3>
+                  {event.location ? (
+                    <p className="mt-2 whitespace-pre-wrap text-sm font-semibold text-[color:var(--care-ink-soft)]">
+                      {event.location}
+                    </p>
+                  ) : null}
+                  {event.notes ? (
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-[color:var(--care-muted)]">
+                      {event.notes}
+                    </p>
+                  ) : null}
+                </CareRecordCard>
                 );
               })
             ) : (

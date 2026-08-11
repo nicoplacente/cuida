@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   createMemoryDeck,
@@ -30,4 +31,17 @@ test("el mazo contiene exactamente dos cartas por cada par", () => {
   assert.equal(deck.length, 10);
   assert.equal(new Set(deck.map((card) => card.cardId)).size, deck.length);
   assert.deepEqual([...pairCounts.values()], [2, 2, 2, 2, 2]);
+});
+
+test("las cartas mantienen dimensiones fijas en todos los niveles", () => {
+  const source = readFileSync(
+    new URL("../features/games/memory-game.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /grid-cols-\[repeat\(auto-fit,minmax\(0,4rem\)\)\]/);
+  assert.match(source, /sm:grid-cols-\[repeat\(auto-fit,minmax\(0,4\.5rem\)\)\]/);
+  assert.match(source, /aspect-\[4\/5\] w-16/);
+  assert.match(source, /sm:w-18/);
+  assert.doesNotMatch(source, /pairCount\s*===/);
 });

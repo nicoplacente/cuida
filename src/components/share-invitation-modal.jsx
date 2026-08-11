@@ -110,7 +110,7 @@ export function ShareInvitationModal({ invitation, onClose }) {
               id="share-invitation-title"
               className="mt-2 text-2xl font-semibold tracking-[-0.02em]"
             >
-              Compartir con {invitation.name || invitation.email}
+              Compartir enlace para {invitation.roleLabel.toLocaleLowerCase("es-AR")}
             </h2>
           </div>
           <button
@@ -126,8 +126,9 @@ export function ShareInvitationModal({ invitation, onClose }) {
         </div>
 
         <p className="mt-4 text-sm text-[color:var(--care-ink-soft)]">
-          Enviá el acceso directamente por WhatsApp. El enlace es personal y
-          vence en 7 días.
+          Podés enviarlo a varias personas. Todas ingresarán con el rol de {" "}
+          {invitation.roleLabel.toLocaleLowerCase("es-AR")} y el enlace vencerá
+          60 minutos después de su creación.
         </p>
         <p className="mt-5 break-all rounded-2xl bg-[color:var(--care-canvas)] p-4 font-mono text-xs text-[color:var(--care-ink)]">
           {invitation.link}

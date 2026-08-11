@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { AppBadgeSync } from "@/components/app-badge-sync";
 import { logoutAction } from "@/app/(auth)/actions";
 import { switchCareCircleAction } from "@/features/care-circles/actions";
 import { requireCareContext } from "@/services/care-circle";
@@ -31,7 +32,7 @@ export async function AppShell({ children }) {
     name: membership.careCircle.name,
   }));
   const now = new Date();
-  const [notifications, unreadCount] = await Promise.all([
+  const [notifications, unreadCount, totalUnreadCount] = await Promise.all([
     prisma.notification.findMany({
       where: {
         userId: user.id,
@@ -49,10 +50,18 @@ export async function AppShell({ children }) {
         scheduledFor: { lte: now },
       },
     }),
+    prisma.notification.count({
+      where: {
+        userId: user.id,
+        readAt: null,
+        scheduledFor: { lte: now },
+      },
+    }),
   ]);
 
   return (
     <div className="min-h-screen bg-[color:var(--care-canvas)]">
+      <AppBadgeSync unreadCount={totalUnreadCount} />
       <SessionKeeper />
       <header className="sticky top-0 z-20 border-b border-[color:var(--care-cloud)] bg-white/90 backdrop-blur">
         <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">

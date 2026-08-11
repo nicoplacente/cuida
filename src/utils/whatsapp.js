@@ -1,7 +1,8 @@
 const mobileUserAgentPattern = /Android|iPhone|iPad|iPod/i;
 
 export function createWhatsAppInvitationMessage(invitation) {
-  return `Hola${invitation.name ? `, ${invitation.name}` : ""}. Te invito a sumarte a nuestro círculo de cuidado en Cuida: ${invitation.link}`;
+  const role = invitation.roleLabel.toLocaleLowerCase("es-AR");
+  return `Te invito a sumarte a nuestro círculo de cuidado en Cuida con el rol de ${role}. Este enlace vence en 60 minutos: ${invitation.link}`;
 }
 
 export function getWhatsAppAppShareUrl(message) {

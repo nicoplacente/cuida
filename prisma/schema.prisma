@@ -107,42 +107,42 @@ model PasswordResetToken {
 }
 
 model Session {
-  id                       String   @id @default(cuid())
-  tokenHash                String   @unique
-  refreshVersion           Int      @default(0)
+  id                       String    @id @default(cuid())
+  tokenHash                String    @unique
+  refreshVersion           Int       @default(0)
   previousRefreshVersion   Int?
   previousRefreshExpiresAt DateTime?
   userId                   String
   expiresAt                DateTime
-  createdAt                DateTime @default(now())
-  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt                DateTime  @default(now())
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
 }
 
 model CareCircle {
-  id            String             @id @default(cuid())
-  name          String
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  patient       Patient?
-  members       CareCircleMember[]
-  medications   Medication[]
-  tasks         CareTask[]
-  events        CalendarEvent[]
-  logs          DailyLog[]
-  documents     Document[]
+  id              String             @id @default(cuid())
+  name            String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  patient         Patient?
+  members         CareCircleMember[]
+  medications     Medication[]
+  tasks           CareTask[]
+  events          CalendarEvent[]
+  logs            DailyLog[]
+  documents       Document[]
   documentFolders DocumentFolder[]
-  activities    Activity[]
-  notifications Notification[]
-  invitations   CareInvitation[]
+  activities      Activity[]
+  notifications   Notification[]
+  invitations     CareInvitation[]
 }
 
 model CareInvitation {
   id           String     @id @default(cuid())
   careCircleId String
   invitedById  String
-  email        String
+  email        String?
   name         String?
   role         CareRole   @default(CAREGIVER)
   token        String     @unique
@@ -153,6 +153,7 @@ model CareInvitation {
   invitedBy    User       @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
 
   @@index([careCircleId, email])
+  @@index([careCircleId, expiresAt])
   @@index([token])
 }
 
@@ -277,7 +278,7 @@ model DailyLog {
 }
 
 model Document {
-  id           String     @id @default(cuid())
+  id           String          @id @default(cuid())
   careCircleId String
   uploadedById String
   folderId     String?
@@ -287,9 +288,9 @@ model Document {
   mimeType     String?
   size         Int?
   notes        String?
-  createdAt    DateTime   @default(now())
-  careCircle   CareCircle @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
-  uploadedBy   User       @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime        @default(now())
+  careCircle   CareCircle      @relation(fields: [careCircleId], references: [id], onDelete: Cascade)
+  uploadedBy   User            @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
   folder       DocumentFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
 
   @@index([careCircleId, folderId])

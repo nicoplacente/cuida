@@ -7,15 +7,15 @@ import {
   shouldUseWhatsAppAppLink,
 } from "./whatsapp.js";
 
-test("crea un mensaje de invitación con nombre y enlace", () => {
+test("crea un mensaje reutilizable con rol, vigencia y enlace", () => {
   const message = createWhatsAppInvitationMessage({
     link: "https://cuida.example/invitacion/abc",
-    name: "Ana",
+    roleLabel: "Cuidador",
   });
 
   assert.equal(
     message,
-    "Hola, Ana. Te invito a sumarte a nuestro círculo de cuidado en Cuida: https://cuida.example/invitacion/abc",
+    "Te invito a sumarte a nuestro círculo de cuidado en Cuida con el rol de cuidador. Este enlace vence en 60 minutos: https://cuida.example/invitacion/abc",
   );
 });
 

@@ -1,7 +1,7 @@
 const APP_TIME_ZONE = process.env.APP_TIME_ZONE || "America/Argentina/Buenos_Aires";
 const APP_TIME_ZONE_OFFSET = process.env.APP_TIME_ZONE_OFFSET || "-03:00";
 
-function getLocalDateKey(date = new Date()) {
+export function getLocalDateKey(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: APP_TIME_ZONE,
     year: "numeric",
@@ -12,12 +12,19 @@ function getLocalDateKey(date = new Date()) {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-export function getStartOfToday() {
-  return new Date(`${getLocalDateKey()}T00:00:00${APP_TIME_ZONE_OFFSET}`);
+export function getStartOfToday(date = new Date()) {
+  return new Date(`${getLocalDateKey(date)}T00:00:00${APP_TIME_ZONE_OFFSET}`);
 }
 
-export function getEndOfToday() {
-  return new Date(`${getLocalDateKey()}T23:59:59.999${APP_TIME_ZONE_OFFSET}`);
+export function getEndOfToday(date = new Date()) {
+  return new Date(`${getLocalDateKey(date)}T23:59:59.999${APP_TIME_ZONE_OFFSET}`);
+}
+
+export function getStartOfNextDay(date = new Date()) {
+  const nextDate = new Date(`${getLocalDateKey(date)}T12:00:00Z`);
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+  const nextDateKey = nextDate.toISOString().slice(0, 10);
+  return new Date(`${nextDateKey}T00:00:00${APP_TIME_ZONE_OFFSET}`);
 }
 
 export function getScheduledDate(time) {

@@ -11,6 +11,7 @@ const serviceWorkerSource = readFileSync(
 function createServiceWorker() {
   const listeners = new Map();
   const displayedNotifications = [];
+  const badgeValues = [];
 
   const context = {
     URL,
@@ -21,6 +22,10 @@ function createServiceWorker() {
     self: {
       clients: { claim: async () => undefined },
       location: { origin: "https://cuida.example" },
+      navigator: {
+        clearAppBadge: async () => badgeValues.push(0),
+        setAppBadge: async (value) => badgeValues.push(value),
+      },
       registration: {
         showNotification: async (title, options) => {
           displayedNotifications.push({ title, options });
@@ -32,11 +37,11 @@ function createServiceWorker() {
   };
 
   vm.runInNewContext(serviceWorkerSource, context);
-  return { displayedNotifications, listeners };
+  return { badgeValues, displayedNotifications, listeners };
 }
 
-test("solicita sonido y vibración para las notificaciones Push", async () => {
-  const { displayedNotifications, listeners } = createServiceWorker();
+test("solicita sonido, vibración y actualiza el badge para las notificaciones Push", async () => {
+  const { badgeValues, displayedNotifications, listeners } = createServiceWorker();
   let notificationPromise;
 
   listeners.get("push")({
@@ -44,6 +49,7 @@ test("solicita sonido y vibración para las notificaciones Push", async () => {
       json: () => ({
         title: "Momento de la medicación",
         body: "Donepezilo 10 mg está programado para las 08:00.",
+        badgeCount: 3,
         notificationId: "notification-1",
         timestamp: 1785210300000,
         url: "/app/medicamentos",
@@ -69,6 +75,7 @@ test("solicita sonido y vibración para las notificaciones Push", async () => {
   );
   assert.equal(displayedNotifications[0].options.renotify, true);
   assert.equal(displayedNotifications[0].options.tag, "notification-1");
+  assert.deepEqual(badgeValues, [3]);
 });
 
 test("evita renotificar sin una etiqueta válida", async () => {

@@ -22,10 +22,7 @@ import {
   matchesDocumentSearch,
 } from "@/features/documents/folders";
 
-const systemFolderOrder = new Map([
-  ["MEDICAL_HISTORY", 0],
-  ["ANAMNESIS", 1],
-]);
+const systemFolderOrder = new Map([["MEDICAL_HISTORY", 0]]);
 
 function getFolderHref(folderId) {
   return folderId

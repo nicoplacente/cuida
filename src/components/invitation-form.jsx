@@ -30,19 +30,20 @@ export function InvitationForm({ action }) {
   return (
     <>
       <form action={formAction} className="grid gap-4">
-        <Field label="Nombre opcional">
-          <input className={inputClassName} name="name" autoComplete="name" />
-        </Field>
-        <Field label="Email">
-          <input className={inputClassName} type="email" name="email" autoComplete="email" required />
-        </Field>
-        <Field label="Rol">
-          <select className={inputClassName} name="role" defaultValue="CAREGIVER">
+        <p className="text-sm text-[color:var(--care-ink-soft)]">
+          Generá un enlace que podrán usar varias personas durante 60 minutos.
+        </p>
+        <Field label="Rol de quienes ingresen">
+          <select
+            className={`${inputClassName} appearance-auto pr-10`}
+            name="role"
+            defaultValue="CAREGIVER"
+          >
             <option value="CAREGIVER">Cuidador</option>
             <option value="OBSERVER">Observador</option>
           </select>
         </Field>
-        <SubmitButton pendingLabel="Creando…">Crear invitación</SubmitButton>
+        <SubmitButton pendingLabel="Generando…">Generar enlace</SubmitButton>
       </form>
 
       {invitation ? (

@@ -11,6 +11,7 @@
     "start": "node scripts/ensure-pnpm.js && next start",
     "test": "node --test",
     "worker:notifications": "node scripts/notifications-worker.js",
+    "documents:remove-anamnesis": "node scripts/remove-anamnesis.js",
     "db:generate": "node scripts/ensure-pnpm.js && prisma generate",
     "db:migrate": "node scripts/ensure-pnpm.js && prisma migrate dev",
     "db:push": "node scripts/ensure-pnpm.js && prisma db push",

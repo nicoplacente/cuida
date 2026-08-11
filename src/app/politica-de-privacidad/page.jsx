@@ -68,8 +68,8 @@ export default function PrivacyPolicyPage() {
         <p>
           Recibimos información directamente cuando creás una cuenta, completás
           formularios, cargás archivos, configurás recordatorios o interactuás con un
-          círculo. También recibimos datos cuando otra persona te invita o registra una
-          actividad vinculada con el cuidado compartido.
+          círculo. También recibimos datos cuando usás un enlace de invitación o cuando
+          otra persona registra una actividad vinculada con el cuidado compartido.
         </p>
         <p>
           El navegador y el dispositivo proporcionan la información técnica estrictamente

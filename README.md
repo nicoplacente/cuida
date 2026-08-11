@@ -111,6 +111,18 @@ pnpm dev
 
 Abrir `http://localhost:3000`.
 
+## Limpieza de Anamnesis
+
+Para eliminar las carpetas predeterminadas `Anamnesis`, sus subcarpetas, sus
+documentos y los archivos protegidos asociados, ejecutá una vez por entorno:
+
+```bash
+pnpm documents:remove-anamnesis
+```
+
+El comando es idempotente y debe ejecutarse con las variables de base de datos
+y R2 del entorno que se desea limpiar.
+
 ## Notificaciones Push y aplicación instalable
 
 Cuida incluye un manifest PWA, service worker, suscripciones por dispositivo y

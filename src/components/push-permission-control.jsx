@@ -2,31 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
-function urlBase64ToUint8Array(value) {
-  const padding = "=".repeat((4 - (value.length % 4)) % 4);
-  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const bytes = window.atob(base64);
-  return Uint8Array.from(bytes, (character) => character.charCodeAt(0));
-}
-
-function haveSameApplicationServerKey(subscription, applicationServerKey) {
-  const currentKey = subscription.options.applicationServerKey;
-  if (!currentKey) return false;
-
-  const currentBytes = new Uint8Array(currentKey);
-  return (
-    currentBytes.length === applicationServerKey.length &&
-    currentBytes.every((byte, index) => byte === applicationServerKey[index])
-  );
-}
-
-async function getServiceWorkerRegistration() {
-  return (
-    (await navigator.serviceWorker.getRegistration()) ||
-    (await navigator.serviceWorker.register("/sw.js"))
-  );
-}
+import {
+  getServiceWorkerRegistration,
+  haveSameApplicationServerKey,
+  urlBase64ToUint8Array,
+} from "@/utils/push-subscriptions";
 
 async function saveSubscription(subscription) {
   try {

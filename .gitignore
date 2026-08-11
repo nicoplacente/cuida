@@ -43,4 +43,5 @@ next-env.d.ts
 
 # others
 .agents
-docs*
+/docs/
+todo.md

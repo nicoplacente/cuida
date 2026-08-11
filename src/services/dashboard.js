@@ -1,10 +1,18 @@
 import { prisma } from "@/services/db";
-import { getEndOfToday, getStartOfToday } from "@/utils/dates";
+import { createDailyPlan } from "@/utils/daily-plan";
+import {
+  getEndOfToday,
+  getLocalDateKey,
+  getStartOfNextDay,
+  getStartOfToday,
+} from "@/utils/dates";
 import { getMedicationOccurrences } from "@/utils/medication-schedules";
 
 export async function getDashboardData(careCircleId) {
-  const todayStart = getStartOfToday();
-  const todayEnd = getEndOfToday();
+  const now = new Date();
+  const todayStart = getStartOfToday(now);
+  const todayEnd = getEndOfToday(now);
+  const todayDateKey = getLocalDateKey(now);
 
   const [
     medications,
@@ -91,8 +99,15 @@ export async function getDashboardData(careCircleId) {
       administration: administrations.get(occurrence.scheduledFor.getTime()) || null,
     }));
   });
+  const dailyPlan = createDailyPlan({
+    dateKey: todayDateKey,
+    events,
+    medicationPlan,
+    tasks,
+  });
 
   return {
+    dailyPlan,
     medications,
     medicationPlan,
     pendingMedications: medicationPlan.filter(({ administration }) => !administration).length,
@@ -102,5 +117,7 @@ export async function getDashboardData(careCircleId) {
     logs,
     activities,
     documents,
+    nextDayStartsAt: getStartOfNextDay(now),
+    todayStart,
   };
 }

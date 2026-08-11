@@ -2,7 +2,6 @@ export const MAX_FOLDER_NAME_LENGTH = 80;
 
 export const DEFAULT_DOCUMENT_FOLDERS = Object.freeze([
   Object.freeze({ name: "Historia clínica", systemKey: "MEDICAL_HISTORY" }),
-  Object.freeze({ name: "Anamnesis", systemKey: "ANAMNESIS" }),
 ]);
 
 export function normalizeFolderName(name) {

@@ -76,13 +76,6 @@ async function main() {
         locationKey: "root:historia clinica",
         systemKey: "MEDICAL_HISTORY",
       },
-      {
-        id: "demo-folder-anamnesis",
-        careCircleId: circle.id,
-        name: "Anamnesis",
-        locationKey: "root:anamnesis",
-        systemKey: "ANAMNESIS",
-      },
     ],
     skipDuplicates: true,
   });

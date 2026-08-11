@@ -7,7 +7,7 @@ import { Card, Field, SecondaryLink, inputClassName } from "@/components/ui";
 export default function RegisterPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-[color:var(--care-canvas)] px-4 py-10">
-      <Card className="w-full max-w-2xl p-6 sm:p-8">
+      <Card className="w-[min(100%,42rem)] p-6 sm:p-8">
         <div className="mb-8 flex items-center gap-3">
           <Image
             src="/cuida.png"

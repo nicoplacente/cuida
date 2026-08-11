@@ -13,6 +13,11 @@ import {
   ToastForm,
 } from "@/components/toast-form";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
+import {
+  CareRecordAction,
+  CareRecordCard,
+  CareRecordMetaItem,
+} from "@/components/care-record-card";
 import { PageHeader } from "@/components/page-header";
 import { MedicationEditButton } from "@/features/medications/medication-edit-button";
 import { MedicationFormFields } from "@/features/medications/medication-form-fields";
@@ -84,38 +89,29 @@ export default async function MedicationsPage() {
                 };
 
                 return (
-                  <article
+                  <CareRecordCard
                     key={medication.id}
-                    className="rounded-2xl border border-[color:var(--care-cloud)] bg-[#f8fbfd] p-4"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
+                    header={(
+                      <>
+                        <CareRecordMetaItem position="leading">
                           <Badge tone={medication.active ? "teal" : "neutral"}>
                             {medication.active ? "Activo" : "Inactivo"}
                           </Badge>
+                        </CareRecordMetaItem>
+                        <CareRecordMetaItem position="trailing">
                           <Badge>{getMedicationFrequencyLabel(medication)}</Badge>
+                        </CareRecordMetaItem>
+                        <CareRecordMetaItem position="below">
                           <Badge tone="teal">{formatReminderLabel(medication.reminderMinutes)}</Badge>
-                        </div>
-                        <h3 className="mt-3 text-xl font-semibold">
-                          {medication.name} {medication.dose}
-                        </h3>
-                        <p className="mt-1 text-sm text-[color:var(--care-muted)]">
-                          Desde el {formatFullDate(medication.startDate)} hasta {" "}
-                          {medication.endDate
-                            ? formatFullDate(medication.endDate)
-                            : "que se indique su finalización"}
-                        </p>
-                        {medication.instructions ? (
-                          <p className="mt-3 text-sm text-[color:var(--care-ink-soft)]">
-                            {medication.instructions}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      {canManage ? (
-                        <div className="flex flex-wrap gap-2">
+                        </CareRecordMetaItem>
+                      </>
+                    )}
+                    actions={canManage ? (
+                      <>
+                        <CareRecordAction>
                           <MedicationEditButton medication={editMedication} />
+                        </CareRecordAction>
+                        <CareRecordAction primary>
                           <ToastForm action={toggleMedicationAction}>
                             <input name="medicationId" type="hidden" value={medication.id} />
                             <input name="active" type="hidden" value={String(!medication.active)} />
@@ -123,17 +119,19 @@ export default async function MedicationsPage() {
                               {medication.active ? "Desactivar" : "Activar"}
                             </SecondarySubmitButton>
                           </ToastForm>
+                        </CareRecordAction>
+                        <CareRecordAction>
                           <ConfirmDeleteButton
                             action={deleteMedicationAction}
                             description={`Se eliminarán ${medication.name}, sus tomas registradas y sus avisos asociados.`}
                             fields={{ medicationId: medication.id }}
                             title={`Eliminar ${medication.name}`}
                           />
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="mt-4 grid gap-3 border-t border-[color:var(--care-cloud)] pt-4">
+                        </CareRecordAction>
+                      </>
+                    ) : null}
+                    footer={(
+                      <>
                       <p className="text-sm font-semibold">Tomas de hoy</p>
                       {occurrences.length ? (
                         occurrences.map((occurrence) => {
@@ -179,8 +177,24 @@ export default async function MedicationsPage() {
                           Este tratamiento no tiene tomas programadas para hoy.
                         </p>
                       )}
-                    </div>
-                  </article>
+                      </>
+                    )}
+                  >
+                    <h3 className="text-xl font-semibold">
+                      {medication.name} {medication.dose}
+                    </h3>
+                    <p className="mt-1 text-sm text-[color:var(--care-muted)]">
+                      Desde el {formatFullDate(medication.startDate)} hasta {" "}
+                      {medication.endDate
+                        ? formatFullDate(medication.endDate)
+                        : "que se indique su finalización"}
+                    </p>
+                    {medication.instructions ? (
+                      <p className="mt-3 whitespace-pre-wrap text-sm text-[color:var(--care-ink-soft)]">
+                        {medication.instructions}
+                      </p>
+                    ) : null}
+                  </CareRecordCard>
                 );
               })
             ) : (

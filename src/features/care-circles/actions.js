@@ -92,6 +92,7 @@ export async function createCareCircleAction(_previousState, formData) {
 export async function updatePatientAction(_previousState, formData) {
   try {
     const { user, careCircle, patient, canManage } = await requireCareContext();
+    const circleName = getFormField(formData, "circleName");
     const name = getFormField(formData, "name");
     const birthDateValue = getFormField(formData, "birthDate");
     const birthDate = parseDateInput(birthDateValue);
@@ -102,11 +103,17 @@ export async function updatePatientAction(_previousState, formData) {
     if (!careCircle || !patient || !canManage) {
       return actionError("No tenés permisos para editar los datos del paciente.");
     }
-    if (!name || !birthDate || age === null) {
-      return actionError("Completá el nombre y una fecha de nacimiento válida.");
+    if (!circleName || !name || !birthDate || age === null) {
+      return actionError(
+        "Completá el nombre del círculo, el nombre del paciente y una fecha de nacimiento válida.",
+      );
     }
 
     await prisma.$transaction([
+      prisma.careCircle.update({
+        where: { id: careCircle.id },
+        data: { name: circleName },
+      }),
       prisma.patient.update({
         where: { id: patient.id },
         data: {
@@ -122,7 +129,7 @@ export async function updatePatientAction(_previousState, formData) {
           careCircleId: careCircle.id,
           userId: user.id,
           type: "PATIENT_UPDATED",
-          message: `${user.name} actualizó los datos de ${name}.`,
+          message: `${user.name} actualizó los datos de ${name} y del círculo de cuidado.`,
         },
       }),
     ]);

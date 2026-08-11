@@ -1,14 +1,13 @@
+import "server-only";
+
 import { deleteR2Object } from "@/services/r2";
+import {
+  deleteDocumentObjectsWith,
+  isCareCircleDocumentKey,
+} from "@/services/document-storage-core";
 
-const deletionBatchSize = 4;
+export { isCareCircleDocumentKey };
 
-export function isCareCircleDocumentKey(filePath, careCircleId) {
-  return filePath.startsWith(`documents/${careCircleId}/`);
-}
-
-export async function deleteDocumentObjects(filePaths) {
-  for (let index = 0; index < filePaths.length; index += deletionBatchSize) {
-    const batch = filePaths.slice(index, index + deletionBatchSize);
-    await Promise.all(batch.map((filePath) => deleteR2Object(filePath)));
-  }
+export function deleteDocumentObjects(filePaths) {
+  return deleteDocumentObjectsWith(filePaths, deleteR2Object);
 }

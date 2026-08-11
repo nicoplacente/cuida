@@ -5,11 +5,19 @@ import { Field, inputClassName } from "@/components/ui";
 import { SubmitButton, ToastForm } from "@/components/toast-form";
 import { updatePatientAction } from "@/features/care-circles/actions";
 
-export function PatientEditButton({ patient }) {
+export function PatientEditButton({ careCircleName, patient }) {
   return (
     <EditModal eyebrow="Paciente asociado" title={`Editar datos de ${patient.name}`}>
       {(close) => (
         <ToastForm action={updatePatientAction} className="grid gap-4" onSuccess={close}>
+          <Field label="Nombre del círculo de cuidado">
+            <input
+              className={inputClassName}
+              defaultValue={careCircleName}
+              name="circleName"
+              required
+            />
+          </Field>
           <Field label="Nombre">
             <input className={inputClassName} defaultValue={patient.name} name="name" required />
           </Field>

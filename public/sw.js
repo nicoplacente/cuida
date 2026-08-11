@@ -15,6 +15,23 @@ function getPushData(eventData) {
   }
 }
 
+async function updateAppBadge(badgeCount) {
+  if (!Number.isInteger(badgeCount) || badgeCount < 0) return;
+
+  try {
+    if (badgeCount > 0 && typeof self.navigator?.setAppBadge === "function") {
+      await self.navigator.setAppBadge(badgeCount);
+    } else if (
+      badgeCount === 0 &&
+      typeof self.navigator?.clearAppBadge === "function"
+    ) {
+      await self.navigator.clearAppBadge();
+    }
+  } catch {
+    // El aviso Push continúa aunque el sistema no permita actualizar el badge.
+  }
+}
+
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
@@ -22,18 +39,21 @@ self.addEventListener("push", (event) => {
   const notificationId = data.notificationId || undefined;
 
   event.waitUntil(
-    self.registration.showNotification(data.title || "Cuida", {
-      body: data.body,
-      icon: data.icon || "/web-app-manifest-192x192.png",
-      badge: data.badge || "/cuida-badge-96.png",
-      lang: data.lang || "es-AR",
-      tag: notificationId,
-      renotify: Boolean(notificationId),
-      silent: false,
-      vibrate: [200, 100, 200],
-      timestamp: Number.isFinite(data.timestamp) ? data.timestamp : Date.now(),
-      data: { url: data.url || "/app" },
-    }),
+    Promise.all([
+      self.registration.showNotification(data.title || "Cuida", {
+        body: data.body,
+        icon: data.icon || "/web-app-manifest-192x192.png",
+        badge: data.badge || "/cuida-badge-96.png",
+        lang: data.lang || "es-AR",
+        tag: notificationId,
+        renotify: Boolean(notificationId),
+        silent: false,
+        vibrate: [200, 100, 200],
+        timestamp: Number.isFinite(data.timestamp) ? data.timestamp : Date.now(),
+        data: { url: data.url || "/app" },
+      }),
+      updateAppBadge(data.badgeCount),
+    ]),
   );
 });
 

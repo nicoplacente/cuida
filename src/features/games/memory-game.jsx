@@ -129,13 +129,6 @@ export function MemoryGame() {
     startLevel(1);
   }
 
-  const gridClassName =
-    pairCount === 2
-      ? "grid-cols-2 sm:grid-cols-4"
-      : pairCount === 3
-        ? "grid-cols-2 sm:grid-cols-4"
-        : "grid-cols-2 sm:grid-cols-4 xl:grid-cols-5";
-
   return (
     <div className="relative grid gap-6">
       <div className="grid gap-4 rounded-2xl bg-[#f8fbfd] p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
@@ -180,7 +173,7 @@ export function MemoryGame() {
         </button>
       </div>
 
-      <div className={`grid gap-3 sm:gap-4 ${gridClassName}`}>
+      <div className="mx-auto grid w-full max-w-[22rem] grid-cols-[repeat(auto-fit,minmax(0,4rem))] justify-center gap-2 sm:max-w-[25.5rem] sm:grid-cols-[repeat(auto-fit,minmax(0,4.5rem))] sm:gap-3">
         {cards.map((card, index) => {
           const isMatched = matchedPairIds.includes(card.id);
           const isSelected = selectedCardIds.includes(card.cardId);
@@ -194,7 +187,7 @@ export function MemoryGame() {
                   : `Dar vuelta la carta ${index + 1}`
               }
               aria-pressed={isRevealed}
-              className={`group relative aspect-[4/5] w-full rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[color:var(--care-teal)] ${
+              className={`group relative aspect-[4/5] w-16 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[color:var(--care-teal)] sm:w-18 ${
                 isMatched ? "ring-2 ring-[color:var(--care-teal)] ring-offset-2" : ""
               }`}
               disabled={isChecking || isMatched || status !== "playing"}
@@ -210,13 +203,13 @@ export function MemoryGame() {
                 <span className="absolute inset-0 flex items-center justify-center rounded-2xl border border-[color:var(--care-cloud)] bg-[color:var(--care-teal-soft)] shadow-[0_10px_30px_rgba(11,31,58,0.08)] [backface-visibility:hidden] group-enabled:hover:border-[color:var(--care-teal)]">
                   <Image
                     alt=""
-                    className="h-auto w-14 sm:w-16"
+                    className="h-auto w-10 sm:w-12"
                     height={64}
                     src="/cuida-icon-192.png"
                     width={64}
                   />
                 </span>
-                <span className="absolute inset-0 flex items-center justify-center rounded-2xl border border-[color:var(--care-cloud)] bg-white text-4xl shadow-[0_10px_30px_rgba(11,31,58,0.08)] [backface-visibility:hidden] [transform:rotateY(180deg)] sm:text-5xl">
+                <span className="absolute inset-0 flex items-center justify-center rounded-2xl border border-[color:var(--care-cloud)] bg-white text-3xl shadow-[0_10px_30px_rgba(11,31,58,0.08)] [backface-visibility:hidden] [transform:rotateY(180deg)] sm:text-4xl">
                   <span aria-hidden="true">{card.symbol}</span>
                 </span>
               </span>

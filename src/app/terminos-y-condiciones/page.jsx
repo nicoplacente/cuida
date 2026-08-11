@@ -14,13 +14,14 @@ export default function TermsAndConditionsPage() {
       eyebrow="Condiciones de uso"
       title="Términos y condiciones"
       description="Estas condiciones explican cómo podés utilizar Cuida y cuáles son las responsabilidades de quienes participan en un círculo de cuidado."
-      updatedAt="4 de agosto de 2026"
+      updatedAt="10 de agosto de 2026"
     >
       <LegalSection title="1. Alcance y aceptación">
         <p>
-          Cuida es una plataforma gratuita y de código abierto creada y operada por
-          Codeluxe para ayudar a familias y cuidadores a organizar cuidados compartidos.
-          Al acceder, crear una cuenta o utilizar el servicio, aceptás estas condiciones.
+          Cuida es una plataforma gratuita con código fuente publicado, creada y operada
+          por Codeluxe para ayudar a familias y cuidadores a organizar cuidados
+          compartidos. Al acceder, crear una cuenta o utilizar el servicio, aceptás estas
+          condiciones.
         </p>
         <p>
           Si utilizás Cuida en representación de otra persona, declarás que contás con la
@@ -76,13 +77,14 @@ export default function TermsAndConditionsPage() {
       <LegalSection title="5. Círculos, roles e invitaciones">
         <p>
           Cada círculo funciona como un espacio colaborativo. Quienes administran el
-          círculo deciden a quién invitan, qué rol asignan y cuándo revocan un acceso. Las
-          personas integrantes podrán ver o modificar información de acuerdo con su rol.
+          círculo deciden con quién comparten enlaces de invitación, qué rol asignan y
+          cuándo revocan un acceso. Las personas integrantes podrán ver o modificar
+          información de acuerdo con su rol.
         </p>
         <p>
-          Antes de invitar a alguien, verificá que su participación sea adecuada. Cada
-          integrante debe tratar la información compartida con confidencialidad y
-          utilizarla únicamente para colaborar con el cuidado.
+          Antes de compartir un enlace, verificá que la participación de quienes lo
+          reciban sea adecuada. Cada integrante debe tratar la información compartida con
+          confidencialidad y utilizarla únicamente para colaborar con el cuidado.
         </p>
       </LegalSection>
 
@@ -110,7 +112,30 @@ export default function TermsAndConditionsPage() {
         </LegalList>
       </LegalSection>
 
-      <LegalSection title="8. Disponibilidad y cambios">
+      <LegalSection title="8. Licencia del código y uso no comercial">
+        <p>
+          El código fuente de Cuida se publica bajo la licencia{" "}
+          <a
+            href="https://github.com/nicoplacente/cuida/blob/main/LICENCE"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-[color:var(--care-ink)] underline decoration-[color:var(--care-teal)] underline-offset-4"
+          >
+            PolyForm Noncommercial License 1.0.0
+          </a>
+          . Esa licencia permite utilizar, modificar y distribuir el software únicamente
+          para los propósitos no comerciales que contempla.
+        </p>
+        <p>
+          Queda prohibido utilizar, explotar, integrar, ofrecer, revender o distribuir el
+          código de Cuida o trabajos derivados con fines comerciales, según los términos
+          de esa licencia, salvo que exista una autorización o licencia comercial previa,
+          expresa y escrita de la persona titular de los derechos. La licencia publicada
+          en el repositorio prevalece para determinar los permisos aplicables al código.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="9. Disponibilidad y cambios">
         <p>
           Procuramos mantener Cuida disponible y segura, pero no garantizamos un
           funcionamiento ininterrumpido ni libre de errores. Podemos corregir, agregar,
@@ -118,12 +143,12 @@ export default function TermsAndConditionsPage() {
           de seguridad o cumplir obligaciones legales.
         </p>
         <p>
-          El carácter abierto del código fuente no implica que la instancia alojada de
-          Cuida deba conservar indefinidamente todas sus funciones o condiciones.
+          La publicación del código fuente no implica que la instancia alojada de Cuida
+          deba conservar indefinidamente todas sus funciones o condiciones.
         </p>
       </LegalSection>
 
-      <LegalSection title="9. Servicios de terceros">
+      <LegalSection title="10. Servicios de terceros">
         <p>
           Cuida utiliza proveedores de infraestructura para alojamiento, base de datos,
           almacenamiento de archivos, envío de correos y notificaciones. La disponibilidad
@@ -136,7 +161,7 @@ export default function TermsAndConditionsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="10. Suspensión y finalización">
+      <LegalSection title="11. Suspensión y finalización">
         <p>
           Podemos restringir o suspender accesos cuando sea razonablemente necesario para
           prevenir abusos, proteger a otras personas, investigar incidentes o cumplir la
@@ -150,7 +175,7 @@ export default function TermsAndConditionsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="11. Responsabilidad">
+      <LegalSection title="12. Responsabilidad">
         <p>
           Cada usuario es responsable de verificar la información y de las decisiones que
           tome a partir de ella. En la máxima medida permitida por la legislación aplicable,
@@ -164,7 +189,7 @@ export default function TermsAndConditionsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="12. Legislación y modificaciones">
+      <LegalSection title="13. Legislación y modificaciones">
         <p>
           Estas condiciones se interpretan conforme a las leyes de la República Argentina.
           Si realizamos cambios relevantes, actualizaremos la fecha de vigencia y
