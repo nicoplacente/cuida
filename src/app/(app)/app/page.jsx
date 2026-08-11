@@ -34,7 +34,7 @@ export default async function DashboardPage() {
     <div>
       <AppSetupAlert publicKey={publicKey} />
       <DailyPlanRefresh refreshAt={data.nextDayStartsAt.toISOString()} />
-      <PageHeader eyebrow="Dashboard" title={`Buenos días, ${user.name}.`}>
+      <PageHeader eyebrow="Dashboard" title={`Hola!, ${user.name}.`}>
         Hoy {patient.name} tiene {data.pendingMedications}{" "}
         {data.pendingMedications === 1
           ? "medicamento pendiente"
