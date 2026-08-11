@@ -32,23 +32,25 @@ El componente aplicará:
 
 ### Tareas
 
-La primera fila mostrará fecha, horario, recordatorio y estado. La segunda contendrá las acciones y, si corresponde, la etiqueta `Completada por…`. El cuerpo mostrará título, descripción y responsable usando todo el ancho.
+La primera fila mostrará fecha, horario, recordatorio y estado. En móvil, fecha y horario quedarán a la izquierda, el estado a la derecha y el recordatorio ocupará una línea secundaria. La segunda contendrá las acciones y, si corresponde, la etiqueta `Completada por…`. En móvil, la acción principal ocupará todo el ancho y `Editar` y `Eliminar` compartirán una fila con el mismo ancho. El cuerpo mostrará título, descripción y responsable usando todo el ancho.
 
 ### Calendario
 
-La primera fila mostrará fecha, horario, recordatorio y estado. La segunda contendrá las acciones y, si corresponde, la etiqueta `Realizado por…`. El cuerpo mostrará título, ubicación y notas a ancho completo.
+La primera fila mostrará fecha, horario, recordatorio y estado. En móvil, fecha y horario quedarán a la izquierda, el estado a la derecha y el recordatorio ocupará una línea secundaria. La segunda contendrá las acciones y, si corresponde, la etiqueta `Realizado por…`. En móvil, la acción principal ocupará todo el ancho y `Editar` y `Eliminar` compartirán una fila con el mismo ancho. El cuerpo mostrará título, ubicación y notas a ancho completo.
 
 ### Historial
 
-La primera fila mostrará fecha, horario, tipo y autor. La segunda contendrá las acciones. El contenido del registro ocupará todo el ancho inferior.
+La primera fila mostrará fecha, horario, tipo y autor. En móvil, fecha y horario quedarán a la izquierda, el tipo a la derecha y el autor ocupará una línea secundaria. La segunda contendrá las acciones; en móvil, `Editar` y `Eliminar` tendrán el mismo ancho. El contenido del registro ocupará todo el ancho inferior.
 
 ### Medicamentos
 
-La primera fila conservará estado, frecuencia y recordatorio. La segunda contendrá las acciones. El cuerpo mostrará nombre, vigencia e indicaciones a ancho completo. La sección `Tomas de hoy` permanecerá debajo, separada por un borde.
+La primera fila conservará estado, frecuencia y recordatorio. En móvil, estado y frecuencia compartirán la línea principal y el recordatorio ocupará una línea secundaria. La segunda contendrá las acciones; en móvil, los tres botones serán compactos y tendrán el mismo ancho. El cuerpo mostrará nombre, vigencia e indicaciones a ancho completo. La sección `Tomas de hoy` permanecerá debajo, separada por un borde.
 
 ## Responsive y accesibilidad
 
-En pantallas amplias, los metadatos ocuparán la primera fila y las acciones comenzarán desde el borde izquierdo de la segunda. En pantallas angostas, las acciones podrán mantenerse una al lado de otra o envolver líneas sin superponerse. Los botones reducirán moderadamente su altura, tipografía y padding solo en móvil, manteniendo un área táctil utilizable, sus estados de foco y sus etiquetas actuales.
+En pantallas amplias, los metadatos ocuparán la primera fila y las acciones comenzarán desde el borde izquierdo de la segunda, conservando exactamente la distribución existente. En pantallas angostas, cada grupo de metadatos utilizará dos líneas deliberadas en lugar de depender del ajuste automático. Las acciones usarán una grilla con anchos uniformes; las acciones principales largas podrán abarcar todas sus columnas. Los botones reducirán moderadamente su tipografía y padding solo en móvil, conservarán una altura táctil mínima coherente, sus estados de foco y sus etiquetas actuales.
+
+Los cambios responsive se aplicarán mediante variantes móviles y `sm:` sobre el componente compartido y sus zonas, sin duplicar tarjetas ni condicionar la lógica de negocio por tamaño de pantalla.
 
 Todo el contenido se mostrará completo. Los textos usarán envoltura de palabras para evitar desbordes horizontales, incluidas cadenas extensas sin espacios.
 
@@ -56,6 +58,7 @@ Todo el contenido se mostrará completo. Los textos usarán envoltura de palabra
 
 - Revisar las cuatro secciones con contenido breve y extenso.
 - Verificar anchos móviles equivalentes a las capturas y un ancho de escritorio.
+- Confirmar que los metadatos mantengan la jerarquía de dos líneas y que los botones móviles tengan anchos uniformes.
 - Confirmar que las acciones permanezcan arriba y que el cuerpo utilice todo el ancho.
 - Ejecutar las pruebas existentes y el build de producción.
 - Preservar los cambios locales previos en Calendario e Historial.
