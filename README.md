@@ -90,20 +90,7 @@ Si tu entorno local no permite migraciones, para desarrollo podés usar:
 pnpm db:push
 ```
 
-6. Cargar datos iniciales:
-
-```bash
-pnpm db:seed
-```
-
-Usuario admin:
-
-```txt
-Email: test@gmail.com
-Contraseña: test
-```
-
-7. Ejecutar la app:
+6. Ejecutar la app:
 
 ```bash
 pnpm dev

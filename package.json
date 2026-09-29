@@ -14,11 +14,7 @@
     "documents:remove-anamnesis": "node scripts/remove-anamnesis.js",
     "db:generate": "node scripts/ensure-pnpm.js && prisma generate",
     "db:migrate": "node scripts/ensure-pnpm.js && prisma migrate dev",
-    "db:push": "node scripts/ensure-pnpm.js && prisma db push",
-    "db:seed": "node scripts/ensure-pnpm.js && prisma db seed"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
+    "db:push": "node scripts/ensure-pnpm.js && prisma db push"
   },
   "dependencies": {
     "@next/env": "16.2.10",

@@ -1,4 +1,10 @@
 import Image from "next/image";
+import { EmailIcon } from "@/components/icons/email-icon";
+import { FacebookIcon } from "@/components/icons/facebook-icon";
+import { InstagramIcon } from "@/components/icons/instagram-icon";
+import { LocationIcon } from "@/components/icons/location-icon";
+import { WebsiteIcon } from "@/components/icons/website-icon";
+import { WhatsappIcon } from "@/components/icons/whatsapp-icon";
 import { InstallAppButton } from "@/components/install-app-button";
 import { LandingFooter } from "@/components/landing-footer";
 import { MobileLandingNavigation } from "@/components/mobile-landing-navigation";
@@ -36,12 +42,101 @@ const problemPoints = [
   "Riesgo de duplicar medicación o saltear tareas.",
 ];
 
+const sponsors = [
+  {
+    id: "farmacia-gomez",
+    name: "Farmacia Gómez",
+    description: "Farmacia especializada en preparaciones magistrales.",
+    image: {
+      src: "/sponsors/farmacia-gomez.jpg",
+      alt: "Farmacia Gómez",
+    },
+    location: "Av. San Martín 218, Coronel Suárez",
+    locationHref:
+      "https://www.google.com/maps/search/?api=1&query=Av.%20San%20Mart%C3%ADn%20218%2C%20B7540EBO%20Coronel%20Su%C3%A1rez%2C%20Provincia%20de%20Buenos%20Aires",
+    map: {
+      title: "Ubicación de Farmacia Gómez en Coronel Suárez",
+      embedUrl:
+        "https://www.google.com/maps?q=Av.%20San%20Mart%C3%ADn%20218%2C%20B7540EBO%20Coronel%20Su%C3%A1rez%2C%20Provincia%20de%20Buenos%20Aires&output=embed",
+    },
+    contact: {
+      phone: "+54 9 2926 40-7906",
+      whatsappHref: "https://wa.me/5492926407906",
+      email: "farmagomezcs@gmail.com",
+      emailHref: "mailto:farmagomezcs@gmail.com",
+      facebook: "Farmacia Gómez",
+      facebookHref: "https://facebook.com/farmaciagomezc.s/",
+      instagram: "@farmaciagomezc.s",
+      instagramHref: "https://instagram.com/farmaciagomezc.s/",
+    },
+  },
+];
+
+function getSponsorContactLinks(contact) {
+  const sponsorContact = contact ?? {};
+
+  return [
+    {
+      href: sponsorContact.whatsappHref,
+      icon: WhatsappIcon,
+      label: sponsorContact.phone,
+      name: "WhatsApp",
+    },
+    {
+      external: false,
+      href: sponsorContact.emailHref,
+      icon: EmailIcon,
+      label: sponsorContact.email,
+      name: "Correo electrónico",
+    },
+    {
+      href: sponsorContact.websiteHref,
+      icon: WebsiteIcon,
+      label: sponsorContact.website,
+      name: "Sitio web",
+    },
+    {
+      href: sponsorContact.facebookHref,
+      icon: FacebookIcon,
+      label: sponsorContact.facebook,
+      name: "Facebook",
+    },
+    {
+      href: sponsorContact.instagramHref,
+      icon: InstagramIcon,
+      label: sponsorContact.instagram,
+      name: "Instagram",
+    },
+  ].filter(({ href, label }) => Boolean(href && label));
+}
+
+function SponsorContactLink({ contact }) {
+  const ContactIcon = contact.icon;
+  const opensNewTab = contact.external !== false;
+
+  return (
+    <a
+      href={contact.href}
+      className="group inline-flex w-fit max-w-full items-center gap-2 font-medium transition text-sm md:text-xs hover:text-[color:var(--care-teal)]"
+      aria-label={
+        opensNewTab
+          ? `${contact.name}: ${contact.label} (se abre en una pestaña nueva)`
+          : `${contact.name}: ${contact.label}`
+      }
+      {...(opensNewTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+    >
+      <ContactIcon className="size-5 md:size-4 shrink-0" />
+      <span className="min-w-0 break-all">{contact.label}</span>
+    </a>
+  );
+}
+
 export default function Home() {
   const donationUrl = getDonationUrl();
   const jsonLd = createLandingJsonLd();
 
   return (
-    <main id="inicio" className="min-h-screen bg-[color:var(--care-canvas)]">
+    <main id="inicio" className="min-h-screen bg-(--care-canvas)">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
@@ -218,6 +313,132 @@ export default function Home() {
                 </h3>
               </Card>
             ))}
+          </div>
+        </Shell>
+      </section>
+
+      <section id="patrocinadores" className="scroll-mt-20 py-20">
+        <Shell>
+          <SectionTitle
+            eyebrow="Patrocinadores"
+            title="Quienes hacen posible Cuida."
+          >
+            Organizaciones que comparten nuestro compromiso con un cuidado más
+            humano, accesible y acompañado.
+          </SectionTitle>
+
+          <div className="mt-10 grid gap-6">
+            {sponsors.map((sponsor, sponsorIndex) => {
+              const hasImage = Boolean(sponsor.image?.src);
+              const hasMap = Boolean(sponsor.map?.embedUrl);
+              const contactLinks = getSponsorContactLinks(sponsor.contact);
+              const hasLocation = Boolean(sponsor.location);
+              const cardLayoutClassName =
+                hasImage && hasMap
+                  ? "lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(18rem,0.85fr)]"
+                  : hasImage || hasMap
+                    ? "lg:grid-cols-2"
+                    : "";
+
+              return (
+                <Card
+                  key={sponsor.id ?? sponsor.name ?? sponsorIndex}
+                  className={`grid overflow-hidden ${cardLayoutClassName}`}
+                >
+                  {hasImage ? (
+                    <div className="relative min-h-64 overflow-hidden bg-white lg:min-h-full">
+                      <Image
+                        src={sponsor.image.src}
+                        alt={sponsor.image.alt ?? sponsor.name ?? ""}
+                        fill
+                        sizes="(min-width: 1024px) 30vw, 100vw"
+                        className="object-scale-down"
+                      />
+                    </div>
+                  ) : null}
+
+                  <div className="flex flex-col justify-center p-6 sm:p-8">
+                    <Badge tone="teal">Patrocinador</Badge>
+                    {sponsor.name ? (
+                      <h3 className="mt-5 text-3xl font-semibold tracking-[-0.03em]">
+                        {sponsor.name}
+                      </h3>
+                    ) : null}
+                    {sponsor.description ? (
+                      <p className="mt-4 leading-7 text-[color:var(--care-ink-soft)]">
+                        {sponsor.description}
+                      </p>
+                    ) : null}
+
+                    {hasLocation || contactLinks.length > 0 ? (
+                      <div
+                        className={`mt-7 grid gap-5 border-t border-[color:var(--care-cloud)] pt-6 text-sm ${
+                          hasLocation && contactLinks.length > 0
+                            ? "sm:grid-cols-2"
+                            : ""
+                        }`}
+                      >
+                        {hasLocation ? (
+                          <div>
+                            <p className="font-semibold text-[color:var(--care-muted)]">
+                              Ubicación
+                            </p>
+                            {sponsor.locationHref ? (
+                              <a
+                                href={sponsor.locationHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`${sponsor.location} (se abre en Google Maps en una pestaña nueva)`}
+                                className="mt-2 inline-flex w-fit max-w-full items-start gap-2 text-sm md:text-xs font-medium transition hover:text-[color:var(--care-teal)]"
+                              >
+                                <LocationIcon className="mt-0.5 size-5 md:size-4 shrink-0" />
+                                <span>{sponsor.location}</span>
+                              </a>
+                            ) : (
+                              <p className="mt-2 inline-flex items-start gap-2 text-sm md:text-xs font-medium">
+                                <LocationIcon className="mt-0.5 size-5 md:size-4 shrink-0" />
+                                <span>{sponsor.location}</span>
+                              </p>
+                            )}
+                          </div>
+                        ) : null}
+
+                        {contactLinks.length > 0 ? (
+                          <div>
+                            <p className="font-semibold text-[color:var(--care-muted)]">
+                              Contacto
+                            </p>
+                            <div className="mt-2 grid gap-2">
+                              {contactLinks.map((contact) => (
+                                <SponsorContactLink
+                                  key={contact.name}
+                                  contact={contact}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {hasMap ? (
+                    <div className="min-h-72 border-t border-[color:var(--care-cloud)] bg-[color:var(--care-canvas)] lg:min-h-full lg:border-l lg:border-t-0">
+                      <iframe
+                        src={sponsor.map.embedUrl}
+                        title={
+                          sponsor.map.title ??
+                          `Ubicación de ${sponsor.name ?? "patrocinador"}`
+                        }
+                        className="h-full min-h-72 w-full border-0"
+                        loading="eager"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
+                  ) : null}
+                </Card>
+              );
+            })}
           </div>
         </Shell>
       </section>
