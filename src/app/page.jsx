@@ -346,13 +346,13 @@ export default function Home() {
                   className={`grid overflow-hidden ${cardLayoutClassName}`}
                 >
                   {hasImage ? (
-                    <div className="relative min-h-64 overflow-hidden bg-white lg:min-h-full">
+                    <div className="relative aspect-square overflow-hidden bg-white lg:aspect-auto lg:min-h-full">
                       <Image
                         src={sponsor.image.src}
                         alt={sponsor.image.alt ?? sponsor.name ?? ""}
                         fill
                         sizes="(min-width: 1024px) 30vw, 100vw"
-                        className="object-scale-down"
+                        className="object-contain"
                       />
                     </div>
                   ) : null}
